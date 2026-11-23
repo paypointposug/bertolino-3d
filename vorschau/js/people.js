@@ -47,17 +47,31 @@ export async function init(W) {
     const si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = mesh.skeleton.bones, a = new Float32Array(si.count);
     for (let i = 0; i < si.count; i++) { let best = 0, bw = -1; for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (w > bw) { bw = w; best = si.getComponent(i, k); } } a[i] = partOf(bones[best] ? bones[best].name : ''); }
     g.setAttribute('aPart', new THREE.BufferAttribute(a, 1));
+    // Haare erkennen (dunkel/rot in der Textur, hinten/oben am Kopf) → für Kurzhaar-Varianten auf eine Kugel um den Schädel ziehen
+    const h = new Float32Array(si.count), pos = g.attributes.position, uv = g.attributes.uv, img = mesh.material && mesh.material.map && mesh.material.map.image;
+    let px = null, IW = 0, IH = 0;
+    try { if (img && img.width) { IW = Math.min(512, img.width); IH = Math.round(img.height * IW / img.width); const c = document.createElement('canvas'); c.width = IW; c.height = IH; const cx = c.getContext('2d'); cx.drawImage(img, 0, 0, IW, IH); px = cx.getImageData(0, 0, IW, IH).data; } } catch (e) { px = null; }
+    const flip = mesh.material && mesh.material.map ? mesh.material.map.flipY : false;
+    for (let i = 0; i < si.count; i++) {
+      if (a[i] !== 2) continue; const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), d = Math.hypot(x - HC.x, y - HC.y, z - HC.z);
+      if (d < 0.112 || (z > 0.03 && y < 1.56) || y < 1.36) continue;
+      let hair = d > 0.16;
+      if (px && uv) { let u = uv.getX(i), v = uv.getY(i); u -= Math.floor(u); v -= Math.floor(v); const X = Math.min(IW - 1, (u * IW) | 0), Y = Math.min(IH - 1, ((flip ? 1 - v : v) * IH) | 0), o = (Y * IW + X) * 4; const r = px[o] / 255, gg = px[o + 1] / 255, b = px[o + 2] / 255, mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), sat = mx > 0 ? (mx - mn) / mx : 0; const skin = r > gg && gg > b && sat > 0.3 && sat < 0.9 && mx > 0.35; hair = !skin && (mx < 0.36 || (r > 0.35 && sat > 0.5 && r >= gg * 1.6)); if (d > 0.17) hair = true; }
+      if (hair) h[i] = 1;
+    }
+    g.setAttribute('aHair', new THREE.BufferAttribute(h, 1));
   }
+  const HC = new THREE.Vector3(0, 1.47, -0.03);       // Schädelmitte im Modellraum (Head 1,369 → HeadTop 1,586)
   const GLSL_HSV = `vec3 ppHSV(vec3 c){ vec4 K=vec4(0.0,-1.0/3.0,2.0/3.0,-1.0); vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g)); vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r)); float d=q.x-min(q.w,q.y); return vec3(abs(q.z+(q.w-q.y)/(6.0*d+1e-10)), d/(q.x+1e-10), q.x); }`;
   function makeMat(base, look) {
     const m = base.clone();
     m.metalness = 0; m.roughness = 0.84; m.envMapIntensity = 0.65;
-    const u = { uTop: { value: new THREE.Color(look.top) }, uPants: { value: new THREE.Color(look.pants) }, uShoe: { value: new THREE.Color(look.shoes) }, uSkin: { value: new THREE.Color(look.skin) }, uHair: { value: new THREE.Color(look.hair) }, uJacket: { value: look.jacket ? 1 : 0 } };
+    const u = { uTop: { value: new THREE.Color(look.top) }, uPants: { value: new THREE.Color(look.pants) }, uShoe: { value: new THREE.Color(look.shoes) }, uSkin: { value: new THREE.Color(look.skin) }, uHair: { value: new THREE.Color(look.hair) }, uJacket: { value: look.jacket ? 1 : 0 }, uShort: { value: look.short ? 1 : 0 }, uHC: { value: HC } };
     for (const k of ['uTop', 'uPants', 'uShoe', 'uSkin', 'uHair']) u[k].value.convertLinearToSRGB();
     m.userData.u = u;
     m.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, u);
-      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aPart;\nflat varying float vPart;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvPart = aPart;');
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aPart; attribute float aHair; uniform float uShort; uniform vec3 uHC;\nflat varying float vPart;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvPart = aPart;\nif (uShort > 0.5 && aHair > 0.5) { vec3 hd = transformed - uHC; float hl = length(hd); transformed = uHC + hd * min(1.0, 0.126 / max(hl, 1e-4)); }');
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nflat varying float vPart;\nuniform vec3 uTop, uPants, uShoe, uSkin, uHair; uniform float uJacket;\n${GLSL_HSV}`)
         .replace('#include <map_fragment>', `#include <map_fragment>
         {
@@ -81,11 +95,11 @@ export async function init(W) {
           diffuseColor.rgb = pow(o, vec3(2.2));
         }`);
     };
-    m.customProgramCacheKey = () => 'ppl1';
+    m.customProgramCacheKey = () => 'ppl2';
     return m;
   }
-  function randomLook() { return { top: pick(PAL.top), pants: pick(PAL.pants), shoes: pick(PAL.shoes), skin: pick(PAL.skin), hair: pick(PAL.hair), jacket: Math.random() < 0.72 }; }
-  function relook(n) { const L0 = randomLook(), u = n.mat.userData.u; for (const [k, v] of [['uTop', L0.top], ['uPants', L0.pants], ['uShoe', L0.shoes], ['uSkin', L0.skin], ['uHair', L0.hair]]) u[k].value.set(v).convertLinearToSRGB(); u.uJacket.value = L0.jacket ? 1 : 0; const h = rnd(1.6, 1.9), bulk = rnd(0.94, 1.08); n.height = h; n.root.scale.set(h / 1.7 * bulk, h / 1.7, h / 1.7 * bulk); }
+  function randomLook() { return { top: pick(PAL.top), pants: pick(PAL.pants), shoes: pick(PAL.shoes), skin: pick(PAL.skin), hair: pick(PAL.hair), jacket: Math.random() < 0.72, short: Math.random() < 0.55 }; }
+  function relook(n) { const L0 = randomLook(), u = n.mat.userData.u; for (const [k, v] of [['uTop', L0.top], ['uPants', L0.pants], ['uShoe', L0.shoes], ['uSkin', L0.skin], ['uHair', L0.hair]]) u[k].value.set(v).convertLinearToSRGB(); u.uJacket.value = L0.jacket ? 1 : 0; u.uShort.value = L0.short ? 1 : 0; const h = rnd(1.6, 1.9), bulk = rnd(0.94, 1.08); n.height = h; n.root.scale.set(h / 1.7 * bulk, h / 1.7, h / 1.7 * bulk); }
 
   // Blob-Schatten (ein Draw Call für alle)
   const blobTex = new THREE.CanvasTexture((() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 3, 32, 32, 31); gr.addColorStop(0, 'rgba(0,0,0,0.5)'); gr.addColorStop(0.6, 'rgba(0,0,0,0.2)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return c; })());
@@ -205,8 +219,8 @@ export async function init(W) {
     // Blick zur Spielfigur, wenn sie nah ist
     if (n.lookK > 0.01 && W.P) {
       const dx = W.P.x - n.x, dz = W.P.z - n.z; let ya = Math.atan2(dx, dz) - n.face; ya = ((ya + Math.PI) % TAU + TAU) % TAU - Math.PI; ya = clamp(ya, -1.15, 1.15);
-      rotWorld(B.NK, _up, ya * 0.35 * n.lookK); rotWorld(B.HD, _up, ya * 0.5 * n.lookK);
-    }
+      rotWorld(B.NK, _up, ya * 0.35 * n.lookK); rotWorld(B.HD, _up, ya * 0.5 * n.lookK); n.hy = ya * 0.85 * n.lookK;
+    } else n.hy = 0;
   }
   function panicPose(n) {
     const w = n.poseW, B = n.bones;
@@ -332,7 +346,9 @@ export async function init(W) {
     n.state = 'hands'; n.t = rnd(1.4, 2.4); n.poseKind = 'up'; n.speed = 0;
     n.face = Math.atan2(W.P.x - n.x, W.P.z - n.z);
   }
+  let calmT = 0;          // nach Schüssen eine Weile keine Café-/Laden-/Haltestellen-Rollen neu
   W.on('shot', (d) => {
+    calmT = 75;
     const p = d && d.pos ? d.pos : { x: W.P.x, z: W.P.z }; let first = true;
     for (const n of npcs) if (n.active && !n.hidden && Math.hypot(n.x - p.x, n.z - p.z) < 55) { scare(n, { x: W.P.x, z: W.P.z }); if (first) { shout(n); first = false; } }
   });
@@ -352,7 +368,9 @@ export async function init(W) {
     // aussteigen (0–2, Bahn bis 3)
     const out = Math.floor(Math.random() * (d.kind === 'tram' ? 4 : 3));
     for (let i = 0; i < out; i++) {
-      const n = npcs.find(q => !q.active); if (!n) break; const p = d.pts[(Math.random() * d.pts.length) | 0];
+      let n = npcs.find(q => !q.active);
+      if (!n) { n = npcs.find(q => q.active && q.role === 'walk' && !q.dog && !q.stroller && !inView(q.x, q.z) && Math.hypot(q.x - camera.position.x, q.z - camera.position.z) > 25); if (n) deactivate(n); }
+      if (!n) break; const p = d.pts[(Math.random() * d.pts.length) | 0];
       activate(n, p[0], p[1], 'alight'); n.hidden = true; n.face = Math.atan2(st.side[0], st.side[1]);
       const ax = p[0] + st.side[0] * 2.2, az = p[1] + st.side[1] * 2.2;
       const steps = [{ t: 0.6 + i * 0.9 }, { show: true }, { go: [ax, az], road: true, r: 0.4, max: 8 }];
@@ -467,7 +485,7 @@ export async function init(W) {
     n.script = null; n.si = 0; n.act = null; n.actW = 0; n.sitK = 0; n.sitWant = 0; n.yOff = 0; n.boarding = false; n.stop = null; n.speed = 0; n.stuckT = 0; n.crossLink = null;
     releaseExtras(n, false); setCarry(n, null);
     n.props.beanie.visible = false; n.props.cap.visible = false; n.hat = null;
-    if (Math.random() < (W.night ? 0.3 : 0.18)) { n.hat = Math.random() < 0.6 ? 'beanie' : 'cap'; const m = n.props[n.hat]; m.material = pick(PROP[n.hat].mats); }
+    if (Math.random() < (W.night ? 0.3 : 0.18)) { n.hat = Math.random() < 0.6 ? 'beanie' : 'cap'; const m = n.props[n.hat]; m.material = pick(PROP[n.hat].mats); n.mat.userData.u.uShort.value = 1; }
     for (const k of ['bag', 'backpack']) n.props[k].material = pick(PROP[k].mats);
   }
   function deactivate(n) {
@@ -572,6 +590,7 @@ export async function init(W) {
     let walk = count('walk');
     const spawnWalker = () => { const n = freeN()[0]; if (!n) return false; const first = !n.everSpawned; const i = spawnNode(fx, fz, first); if (i < 0) return false; activate(n, N[i][0], N[i][1], 'walk'); if (!placeOn(n, i)) { deactivate(n); return false; } walkerCarry(n); walk++; return true; };
     while (walk < minWalk && freeN().length) if (!spawnWalker()) break;
+    if (calmT > 0) { const want0 = Math.round(MAXN * 0.6); let t0 = npcs.filter(n => n.active).length; while (t0 < want0 && freeN().length) { if (spawnWalker()) t0++; else break; } return; }
     if (nearShop && count('sit') < (MOBILE ? 1 : 2) && freeN().length > 1) roleSit(freeN()[0]);
     if (nearShop && count('shop') < 1 && freeN().length > 1) roleShop(freeN()[0]);
     for (const st of W.stops) {
@@ -698,7 +717,7 @@ export async function init(W) {
     if (show('phone', vis && (n.act === 'phone' || n.act === 'look' || n.carry === 'phoneLook'))) { n.bones.RH.getWorldPosition(_hp); P.phone.position.copy(_hp); P.phone.rotation.set(n.act === 'phone' ? 0 : -1.0, n.face + (n.act === 'phone' ? -1.2 : 0), 0); }
     if (show('pizza', vis && n.carry === 'pizza')) { n.bones.RH.getWorldPosition(_hp); n.bones.LH.getWorldPosition(_hp2); P.pizza.position.set((_hp.x + _hp2.x) / 2, (_hp.y + _hp2.y) / 2 + 0.04, (_hp.z + _hp2.z) / 2); P.pizza.rotation.set(0, n.face, 0); }
     if (show('backpack', vis && n.carry === 'backpack')) { n.bones.S2.getWorldPosition(_hp); P.backpack.position.set(_hp.x - fx * 0.17 * n.root.scale.z, _hp.y - 0.06, _hp.z - fz * 0.17 * n.root.scale.z); P.backpack.rotation.set(0, n.face, 0); P.backpack.scale.setScalar(n.root.scale.y); }
-    for (const h of ['beanie', 'cap']) if (show(h, vis && n.hat === h)) { n.bones.HD.getWorldPosition(_hp); n.bones.HT.getWorldPosition(_hp2); _hp2.sub(_hp); P[h].position.copy(_hp).addScaledVector(_hp2, 0.62); P[h].rotation.set(0, n.face, 0); P[h].scale.setScalar(n.root.scale.y * 1.02); }
+    for (const h of ['beanie', 'cap']) if (show(h, vis && n.hat === h)) { n.bones.HD.getWorldPosition(_hp); n.bones.HT.getWorldPosition(_hp2); _hp2.sub(_hp); const L0 = _hp2.length(); P[h].position.copy(_hp).addScaledVector(_hp2, h === 'cap' ? 0.44 : 0.45); _hp2.multiplyScalar(1 / (L0 || 1)); _q.setFromUnitVectors(_up, _hp2); _tq.setFromAxisAngle(_up, n.face + (n.hy || 0)); P[h].quaternion.copy(_q).multiply(_tq); { const k = L0 / 0.217; P[h].scale.set(k * (h === 'cap' ? 1.16 : 1.12), k * (h === 'cap' ? 1.05 : 1.0), k * (h === 'cap' ? 1.16 : 1.14)); } }
   }
 
   // ---------------- Hauptschleife ----------------
@@ -707,8 +726,9 @@ export async function init(W) {
   const api = {
     npcs, dogs, strollers, chairs: CHAIRS,
     stats() { const a = npcs.filter(n => n.active); const by = {}; for (const n of a) by[n.role] = (by[n.role] || 0) + 1; return { active: a.length, max: MAXN, roles: by, sitting: a.filter(n => n.sitK > 0.9).length, hidden: a.filter(n => n.hidden).length, dogs: dogs.filter(d => d.owner).length, strollers: strollers.filter(s => s.owner).length, carry: a.map(n => n.carry).filter(Boolean).join(',') }; },
+    waitAt(id, k = 2) { const st = W.stops.find(q => q.id === id); if (!st) return 'no stop'; let c = 0; for (let i = 0; i < k; i++) { const n = npcs.find(q => !q.active); if (n && roleWait(n, st)) c++; } return c; },
     clear(r = 1e9, x = 0, z = 0) { for (const n of npcs) if (n.active && Math.hypot(n.x - x, n.z - z) < r) deactivate(n); },
-    place(x, z, face, o = {}) { const n = npcs.find(q => !q.active); if (!n) return false; activate(n, x, z, 'pose'); n.face = face; if (o.carry) setCarry(n, o.carry); if (o.hat !== undefined) { n.hat = o.hat; } n.script = [{ act: o.act || null, sit: o.sit ? true : undefined, at: o.at, t: o.t || 999 }]; n.si = 0; return true; },
+    place(x, z, face, o = {}) { const n = npcs.find(q => !q.active); if (!n) return false; activate(n, x, z, 'pose'); n.face = face; if (o.carry) setCarry(n, o.carry); if (o.hat !== undefined) { n.hat = o.hat; if (o.hat) n.mat.userData.u.uShort.value = 1; } if (o.short !== undefined) n.mat.userData.u.uShort.value = o.short ? 1 : 0; n.script = [{ act: o.act || null, sit: o.sit ? true : undefined, at: o.at, t: o.t || 999 }]; n.si = 0; return true; },
     force(role) { const n = npcs.find(q => !q.active); if (!n) return false; const [fx, fz] = focus(); if (role === 'sit') return roleSit(n); if (role === 'shop') return roleShop(n); if (role === 'phone') return rolePhone(n, fx, fz); return false; },
   };
   window.__people = api;
@@ -721,7 +741,7 @@ export async function init(W) {
         for (let i = 0; i < MAXN; i++) npcs.push(makeNPC());
         ready = true; recount = 0;
       }
-      tick++; tNow += dt;
+      tick++; tNow += dt; calmT -= dt;
       _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _fr.setFromProjectionMatrix(_pm);
       camera.getWorldPosition(camPos);
       const [fx, fz] = focus();

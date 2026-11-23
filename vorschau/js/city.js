@@ -16,7 +16,7 @@ export async function init(W) {
   const { scene, camera, renderer, ctx, ext, isMobile } = W;
   const t0 = performance.now();
   const getJSON = (u) => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
-  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232305'), getJSON('city/city_vis.json' + VQ)]);
+  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232338'), getJSON('city/city_vis.json' + VQ)]);
   const root = new THREE.Group(); root.name = 'city'; scene.add(root);
   camera.far = Math.max(camera.far, 1500); camera.updateProjectionMatrix();
   const FAR_LAYER = 2; camera.layers.enable(FAR_LAYER);          // Fernbereich + Kleinkram: nicht in der nassen Spiegelung
@@ -152,7 +152,7 @@ export async function init(W) {
   const SIGN = [0x1d5e3a, 0x8e1b1b, 0x1c2f5c, 0x18181a, 0xd9d4c4, 0xc7951e, 0xb4501c, 0x1f6c72, 0x5b2a6e, 0x2c2c2c];
   const STYLE_TINT = [[1, 1, 1], [1, 1, 1], [1, 0.99, 0.96], [1, 0.98, 0.97], [1, 1, 1], [1, 1, 1], [0.98, 1, 0.98], [1, 1, 1]];
   const _c = new THREE.Color();
-  function buildingGeos(list, wallsList) {
+  function buildingGeos(list, wallsList, LJ) {
     const pos = [], nrm = [], uv = [], fa = [], fb = [], tc = [], col = [], idx = [];
     const trim = [], roofs = [], slopes = [], chim = [];
     list.forEach((b, bi) => {
@@ -228,6 +228,93 @@ export async function init(W) {
         g.setAttribute('rk', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count), 1)); roofs.push(g.toNonIndexed());
       } catch (e) { /* kaputte Grundrisse überspringen */ }
     });
+    // ---- amtliche Hausformen (LoD2, Geoportal Berlin): echte Traufen, Dächer, Giebel und Brandwände
+    if (LJ) {
+      const RP = [], RN = [], RU = [], RC = [], RK = [];
+      const v3 = (a, i) => [a[i], a[i + 1], a[i + 2]];
+      for (const b of LJ.b) {
+        const sd = hash(b.id), r = rng(Math.floor(sd * 1e6) + 7);
+        const style = b.st ?? Math.floor(sd * 8), Lb = b.lv || 5;
+        const tint = STYLE_TINT[style] || [1, 1, 1]; const j = 0.94 + r() * 0.1;
+        const tcc = _c.set(SIGN[Math.floor(r() * SIGN.length)]).clone();
+        const egh0 = 4.3 + r() * 0.6;
+        const tcl = [0.86 * tint[0] * j, 0.82 * tint[1] * j, 0.75 * tint[2] * j];
+        for (const w of b.w) {
+          const nx = w.n[0], nz = w.n[1], dx = nz, dz = -nx;          // u läuft von außen gesehen links → rechts
+          let t = w.t; const len = w.L, cl = Math.max(len, w.cl || len), u0 = w.u0 || 0;   // Fassaden-Zug: Fensterachsen laufen über Knicke/runde Ecken
+          if ((t === 'M' || t === 'S') && cl < 1.6) t = 'C';
+          if (t === 'C' && cl < 1.3) t = 'P';
+          const ty = TYPE[t], street = ty < 2, ce = w.ce ?? w.e;
+          const TOPH = Math.max(0.5, ce), Lw = Math.abs(ce - b.e) < 1.5 ? Lb : Math.max(1, Math.round((ce - 1) / 3.4));
+          const bw = style === 7 && street ? 2.9 : street ? 2.4 : 2.7, nb = Math.max(1, Math.round(cl / bw));
+          const EGH = street ? (Lw <= 1 ? TOPH : egh0) : 0, CSx = street ? (Lw >= 3 ? TOPH - 1.0 : TOPH) : TOPH - 0.55;
+          const FH = street ? (CSx - EGH) / Math.max(1, Lw - 1) : (TOPH - 0.55) / Math.max(1, Lw);
+          let umin = Infinity;
+          for (const arr of [w.lo, w.hi]) for (let i = 0; i < arr.length; i += 3) umin = Math.min(umin, (arr[i] - w.a[0]) * dx + (arr[i + 2] - w.a[1]) * dz);
+          const ox = w.a[0] + dx * umin, oz = w.a[1] + dz * umin;
+          const put = (arr, plain) => {
+            for (let i = 0; i < arr.length; i += 9) {
+              let A = v3(arr, i), B2 = v3(arr, i + 3), C2 = v3(arr, i + 6);
+              const cx = (B2[1] - A[1]) * (C2[2] - A[2]) - (B2[2] - A[2]) * (C2[1] - A[1]), cz = (B2[0] - A[0]) * (C2[1] - A[1]) - (B2[1] - A[1]) * (C2[0] - A[0]);
+              if (cx * nx + cz * nz < 0) { const s = B2; B2 = C2; C2 = s; }
+              const base = pos.length / 3;
+              for (const p of [A, B2, C2]) {
+                pos.push(p[0], p[1], p[2]); nrm.push(nx, 0, nz);
+                const u = (u0 + (p[0] - ox) * dx + (p[2] - oz) * dz) / cl * nb;
+                uv.push(u, Math.max(0, p[1]));
+                if (plain) { fa.push(0, 4, 0, 1); fb.push(0, 1, 999, 999); col.push(tcl[0], tcl[1], tcl[2]); }
+                else { fa.push(style, ty, sd, nb); fb.push(EGH, FH, CSx, TOPH); col.push(tint[0] * j, tint[1] * j, tint[2] * j); }
+                tc.push(tcc.r, tcc.g, tcc.b);
+              }
+              idx.push(base, base + 1, base + 2);
+            }
+          };
+          if (w.t === 'P') put(w.hi, false); else { put(w.lo, false); put(w.hi, true); }
+          if (street && Lw >= 2 && w.lo.length && len > 0.4) {           // Gesimse als echte Vorsprünge
+            const mx = ox + dx * len / 2, mz = oz + dz * len / 2;
+            const ledge = (yA, yB, d) => { const g = new THREE.BoxGeometry(len + d * 0.2, yB - yA, d); g.rotateY(Math.atan2(-dz, dx)); g.translate(mx + nx * d / 2, (yA + yB) / 2, mz + nz * d / 2); return g; };
+            trim.push([ledge(EGH - 0.02, EGH + 0.16, 0.12), tcl]);
+            if (Lw >= 3) { trim.push([ledge(TOPH - 0.32, TOPH - 0.02, 0.42), tcl]); trim.push([ledge(TOPH - 0.5, TOPH - 0.32, 0.2), tcl]); }
+          }
+          if (w.t === 'P' && Lb >= 3 && r() < 0.55 && w.hi.length) {      // Schornstein auf der Brandwand
+            let k = 1; for (let i = 4; i < w.hi.length; i += 3) if (w.hi[i] > w.hi[k]) k = i;
+            chim.push([w.hi[k - 1] - nx * 0.5, w.hi[k] - 0.15, w.hi[k + 1] - nz * 0.5, Math.atan2(-dz, dx), 0.8 + r() * 0.6]);
+          }
+        }
+        // Dachflächen
+        const rkind = r(), rc = 0.82 + r() * 0.3, slate = r() < 0.35;
+        const tile = slate ? [0.6 * rc, 0.63 * rc, 0.7 * rc] : [rc, rc, rc];
+        const cv = 0.75 + r() * 0.4, flat = rkind < 0.22 ? [1.45 * cv, 0.78 * cv, 0.6 * cv] : rkind < 0.3 ? [0.82 * cv, 0.95 * cv, 0.78 * cv] : [cv, cv, cv * 1.02];
+        for (const f of b.r) {
+          const v = f.v; if (v.length < 9) continue;
+          const n = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
+          for (let i = 0; i < v.length; i += 9) {            // Normale über alle Dreiecke (einzelne können entartet sein)
+            _a.set(v[i + 3] - v[i], v[i + 4] - v[i + 1], v[i + 5] - v[i + 2]); _b.set(v[i + 6] - v[i], v[i + 7] - v[i + 1], v[i + 8] - v[i + 2]);
+            _a.cross(_b); if (_a.y < 0) _a.negate(); n.add(_a);
+          }
+          if (n.lengthSq() < 1e-10) n.set(0, 1, 0); n.normalize();
+          const flatF = f.f === 1;
+          const th = new THREE.Vector3(-n.z, 0, n.x); if (th.lengthSq() < 1e-6) th.set(1, 0, 0); th.normalize();
+          const sl = new THREE.Vector3().crossVectors(n, th).normalize();
+          for (let i = 0; i < v.length; i += 9) {
+            let P0 = v3(v, i), P1 = v3(v, i + 3), P2 = v3(v, i + 6);
+            const cy = (P1[2] - P0[2]) * (P2[0] - P0[0]) - (P1[0] - P0[0]) * (P2[2] - P0[2]);
+            if (cy < 0) { const s = P1; P1 = P2; P2 = s; }
+            for (const p of [P0, P1, P2]) {
+              RP.push(p[0], p[1] + (flatF ? 0.02 : 0), p[2]); RN.push(n.x, n.y, n.z);
+              RU.push((p[0] * th.x + p[2] * th.z) / 4, (p[0] * sl.x + p[1] * sl.y + p[2] * sl.z) / 4);
+              const cc = flatF ? flat : tile; RC.push(cc[0], cc[1], cc[2]); RK.push(flatF ? 0 : 1);
+            }
+          }
+        }
+      }
+      if (RP.length) {
+        const rg = new THREE.BufferGeometry();
+        rg.setAttribute('position', new THREE.Float32BufferAttribute(RP, 3)); rg.setAttribute('normal', new THREE.Float32BufferAttribute(RN, 3));
+        rg.setAttribute('uv', new THREE.Float32BufferAttribute(RU, 2)); rg.setAttribute('color', new THREE.Float32BufferAttribute(RC, 3)); rg.setAttribute('rk', new THREE.Float32BufferAttribute(RK, 1));
+        roofs.push(rg);
+      }
+    }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('fa', new THREE.Float32BufferAttribute(fa, 4)); g.setAttribute('fb', new THREE.Float32BufferAttribute(fb, 4));
@@ -260,7 +347,11 @@ export async function init(W) {
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vRk > 0.5 && vRk < 1.5 ? 0.72 : 0.92;');
   };
   roofMat.customProgramCacheKey = () => 'cityRoof2';
-  { const G = buildingGeos([...CJ.buildings, ...CV.far], [...CV.walls, ...CV.farWalls]);
+  { const LJ = new URLSearchParams(location.search).get('lod') === '0' ? null : await getJSON('city/lod2.json' + VQ).catch(() => null);
+    const SK = new Set(LJ ? LJ.skip.map(String) : []);
+    const all = [...CJ.buildings, ...CV.far], allW = [...CV.walls, ...CV.farWalls];
+    const keep = all.map((b, i) => i).filter(i => !SK.has(String(all[i].id)));
+    const G = buildingGeos(keep.map(i => all[i]), keep.map(i => allW[i]), LJ);
     const m = new THREE.Mesh(G.fac, facMat); m.castShadow = true; m.receiveShadow = true; m.name = 'fac'; root.add(m);
     const rm = new THREE.Mesh(G.roof, roofMat); rm.castShadow = true; rm.receiveShadow = true; rm.name = 'roofs'; root.add(rm); }
 

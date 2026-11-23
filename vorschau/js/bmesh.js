@@ -5,7 +5,7 @@
 // alles aus dem Luftbild-Mesh auf Straßen/Gehwegen/Höfen (Autos, Bäume, Menschen aus den Luftbildern) wird flach unter unseren Boden gedrückt.
 // Abschalten: ?b=0
 import * as THREE from 'three';
-import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js?v=11232305';
+import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js?v=11232338';
 
 const URL0 = 'https://berlin-wab.virtualcitymap.de/datasource-data/baselayer/mesh_2025/tileset.json';
 const CREDIT = '3D-Mesh Berlin 2025 © Berlin Partner für Wirtschaft und Technologie GmbH';
