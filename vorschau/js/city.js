@@ -16,7 +16,7 @@ export async function init(W) {
   const { scene, camera, renderer, ctx, ext, isMobile } = W;
   const t0 = performance.now();
   const getJSON = (u) => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
-  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232338'), getJSON('city/city_vis.json' + VQ)]);
+  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232347'), getJSON('city/city_vis.json' + VQ)]);
   const root = new THREE.Group(); root.name = 'city'; scene.add(root);
   camera.far = Math.max(camera.far, 1500); camera.updateProjectionMatrix();
   const FAR_LAYER = 2; camera.layers.enable(FAR_LAYER);          // Fernbereich + Kleinkram: nicht in der nassen Spiegelung
@@ -232,13 +232,31 @@ export async function init(W) {
     if (LJ) {
       const RP = [], RN = [], RU = [], RC = [], RK = [];
       const v3 = (a, i) => [a[i], a[i + 1], a[i + 2]];
-      for (const b of LJ.b) {
+      // echte Farben (aus dem Berliner 3D-Mesh abgelesen): Faktor gegenüber dem Mittelwert der jeweiligen Textur
+      const lin = (c) => c.map(v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+      const COLM = [[0.641, 0.555, 0.405], [0.558, 0.561, 0.524], [0.727, 0.639, 0.4], [0.678, 0.521, 0.435], [0.755, 0.731, 0.668], [0.512, 0.353, 0.277], [0.583, 0.627, 0.544], [0.564, 0.492, 0.361]];
+      const COURT = [0.427, 0.376, 0.326], TILE = [0.17, 0.048, 0.032], FLATM = [0.108, 0.11, 0.115];
+      const div = (a, m, lo, hi) => a.map((v, i) => Math.min(hi, Math.max(lo, v / m[i])));
+      const lum = (c) => 0.3 * c[0] + 0.5 * c[1] + 0.2 * c[2];
+      const bestCol = (t, fb) => { const lt = lum(t); let best = fb, bd = 1e9;
+        COLM.forEach((m, k) => { if (k === 5 && !(t[0] > 1.6 * t[2] && lt < 0.32)) return; const lm = lum(m);
+          let dd = Math.log(lt / lm) ** 2 * 0.25; for (let q = 0; q < 3; q++) dd += (t[q] / lt - m[q] / lm) ** 2; if (dd < bd) { bd = dd; best = k; } });
+        return best; };
+      const IRON = [0.055, 0.056, 0.06], balc = { n: 0, max: isMobile ? 320 : 700 };
+      const dShop = (b) => { const w = b.w[0]; return w ? Math.hypot(w.a[0] - 6, w.a[1] + 5) : 999; };
+      for (const b of [...LJ.b].sort((p, q) => dShop(p) - dShop(q))) {      // nah am Laden zuerst (Balkon-Budget)
         const sd = hash(b.id), r = rng(Math.floor(sd * 1e6) + 7);
-        const style = b.st ?? Math.floor(sd * 8), Lb = b.lv || 5;
+        let style = b.st ?? Math.floor(sd * 8); const Lb = b.lv || 5;
+        const tS = b.cs ? lin(b.cs) : null, tC = (b.cc || b.cs) ? lin(b.cc || b.cs) : null;
+        if (tS) style = bestCol(tS, style);
         const tint = STYLE_TINT[style] || [1, 1, 1]; const j = 0.94 + r() * 0.1;
         const tcc = _c.set(SIGN[Math.floor(r() * SIGN.length)]).clone();
         const egh0 = 4.3 + r() * 0.6;
-        const tcl = [0.86 * tint[0] * j, 0.82 * tint[1] * j, 0.75 * tint[2] * j];
+        const tcl0 = [0.86 * tint[0] * j, 0.82 * tint[1] * j, 0.75 * tint[2] * j];
+        const mulS = tS ? div(tS, COLM[style], 0.45, 1.9) : [tint[0] * j, tint[1] * j, tint[2] * j];
+        const mulC = tC ? div(tC, COURT, 0.45, 2.2) : [tint[0] * j, tint[1] * j, tint[2] * j];
+        const trS = tS ? tS.map(v => v * 0.9) : tcl0, trC = tC ? tC.map(v => v * 0.9) : tcl0, tcl = trS;
+        const balcS = r() < 0.45, balcC = r() < 0.35;
         for (const w of b.w) {
           const nx = w.n[0], nz = w.n[1], dx = nz, dz = -nx;          // u läuft von außen gesehen links → rechts
           let t = w.t; const len = w.L, cl = Math.max(len, w.cl || len), u0 = w.u0 || 0;   // Fassaden-Zug: Fensterachsen laufen über Knicke/runde Ecken
@@ -252,6 +270,7 @@ export async function init(W) {
           let umin = Infinity;
           for (const arr of [w.lo, w.hi]) for (let i = 0; i < arr.length; i += 3) umin = Math.min(umin, (arr[i] - w.a[0]) * dx + (arr[i + 2] - w.a[1]) * dz);
           const ox = w.a[0] + dx * umin, oz = w.a[1] + dz * umin;
+          const wm = street ? mulS : t === 'P' ? [tint[0] * j, tint[1] * j, tint[2] * j] : mulC, wt = street ? trS : trC;
           const put = (arr, plain) => {
             for (let i = 0; i < arr.length; i += 9) {
               let A = v3(arr, i), B2 = v3(arr, i + 3), C2 = v3(arr, i + 6);
@@ -262,8 +281,8 @@ export async function init(W) {
                 pos.push(p[0], p[1], p[2]); nrm.push(nx, 0, nz);
                 const u = (u0 + (p[0] - ox) * dx + (p[2] - oz) * dz) / cl * nb;
                 uv.push(u, Math.max(0, p[1]));
-                if (plain) { fa.push(0, 4, 0, 1); fb.push(0, 1, 999, 999); col.push(tcl[0], tcl[1], tcl[2]); }
-                else { fa.push(style, ty, sd, nb); fb.push(EGH, FH, CSx, TOPH); col.push(tint[0] * j, tint[1] * j, tint[2] * j); }
+                if (plain) { fa.push(0, 4, 0, 1); fb.push(0, 1, 999, 999); col.push(wt[0], wt[1], wt[2]); }
+                else { fa.push(style, ty, sd, nb); fb.push(EGH, FH, CSx, TOPH); col.push(wm[0], wm[1], wm[2]); }
                 tc.push(tcc.r, tcc.g, tcc.b);
               }
               idx.push(base, base + 1, base + 2);
@@ -276,6 +295,23 @@ export async function init(W) {
             trim.push([ledge(EGH - 0.02, EGH + 0.16, 0.12), tcl]);
             if (Lw >= 3) { trim.push([ledge(TOPH - 0.32, TOPH - 0.02, 0.42), tcl]); trim.push([ledge(TOPH - 0.5, TOPH - 0.32, 0.2), tcl]); }
           }
+          // Balkone: Straße mittig gestapelt (Gründerzeit), Hof jede zweite Achse
+          if (w.lo.length && Lw >= 3 && balc.n < balc.max && (street ? balcS : balcC)) {
+            const bwid = cl / nb, ks = street ? (nb >= 5 ? (nb >= 10 ? [Math.floor(nb / 2) - 3, Math.floor(nb / 2), Math.floor(nb / 2) + 3] : [Math.floor(nb / 2)]) : []) : [...Array(nb).keys()].filter(k => k % 2 === 1);
+            for (const k of ks) {
+              const lu = (k + 0.5) * bwid - u0; if (lu < 0.7 || lu > len - 0.7) continue;
+              const bx = ox + dx * lu, bz = oz + dz * lu, W2 = Math.min(street ? 2.0 : 2.4, bwid * 0.9), D = street ? 0.85 : 1.15;
+              const n0 = street ? 1 : 1, n1 = street ? Lw - 2 : Lw - 1;
+              for (let f = n0; f <= n1 && balc.n < balc.max; f++) {
+                const y = street ? EGH + (f - 1) * FH : f * FH; if (y > TOPH - 2.2) break;
+                const box = (w3, h3, d3, ox3, oy3, od3) => { const g = new THREE.BoxGeometry(w3, h3, d3); g.rotateY(Math.atan2(-dz, dx)); g.translate(bx + dx * ox3 + nx * od3, y + oy3, bz + dz * ox3 + nz * od3); return g; };
+                trim.push([box(W2, 0.16, D, 0, 0.0, D / 2), trS]);
+                trim.push([box(W2, 0.78, 0.04, 0, 0.47, D - 0.03), IRON]);
+                trim.push([box(0.04, 0.78, D, -W2 / 2 + 0.03, 0.47, D / 2), IRON]); trim.push([box(0.04, 0.78, D, W2 / 2 - 0.03, 0.47, D / 2), IRON]);
+                balc.n++;
+              }
+            }
+          }
           if (w.t === 'P' && Lb >= 3 && r() < 0.55 && w.hi.length) {      // Schornstein auf der Brandwand
             let k = 1; for (let i = 4; i < w.hi.length; i += 3) if (w.hi[i] > w.hi[k]) k = i;
             chim.push([w.hi[k - 1] - nx * 0.5, w.hi[k] - 0.15, w.hi[k + 1] - nz * 0.5, Math.atan2(-dz, dx), 0.8 + r() * 0.6]);
@@ -283,8 +319,11 @@ export async function init(W) {
         }
         // Dachflächen
         const rkind = r(), rc = 0.82 + r() * 0.3, slate = r() < 0.35;
-        const tile = slate ? [0.6 * rc, 0.63 * rc, 0.7 * rc] : [rc, rc, rc];
-        const cv = 0.75 + r() * 0.4, flat = rkind < 0.22 ? [1.45 * cv, 0.78 * cv, 0.6 * cv] : rkind < 0.3 ? [0.82 * cv, 0.95 * cv, 0.78 * cv] : [cv, cv, cv * 1.02];
+        let tile = slate ? [0.6 * rc, 0.63 * rc, 0.7 * rc] : [rc, rc, rc], tileK = 1;
+        const cv = 0.75 + r() * 0.4; let flat = rkind < 0.22 ? [1.45 * cv, 0.78 * cv, 0.6 * cv] : rkind < 0.3 ? [0.82 * cv, 0.95 * cv, 0.78 * cv] : [cv, cv, cv * 1.02];
+        const soft = (t, k, lmax) => { const l = lum(t), m = Math.min(1, lmax / Math.max(l, 1e-4)); return t.map(v => (v * (1 - k) + l * k) * m); };   // etwas entsättigen + Helligkeit deckeln
+        if (b.rt) { const t = soft(lin(b.rt), 0.22, 0.3); if (b.rt[0] > 1.18 * b.rt[1] && b.rt[0] > 1.1 * b.rt[2]) tile = div(t, TILE, 0.4, 4.5); else { tile = div(t, FLATM, 0.3, 5); tileK = 0; } }   // Ziegel rot – sonst Schiefer/Zink/Pappe
+        if (b.rf) flat = div(soft(lin(b.rf), 0.3, 0.26), FLATM, 0.3, 4);
         for (const f of b.r) {
           const v = f.v; if (v.length < 9) continue;
           const n = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
@@ -303,7 +342,7 @@ export async function init(W) {
             for (const p of [P0, P1, P2]) {
               RP.push(p[0], p[1] + (flatF ? 0.02 : 0), p[2]); RN.push(n.x, n.y, n.z);
               RU.push((p[0] * th.x + p[2] * th.z) / 4, (p[0] * sl.x + p[1] * sl.y + p[2] * sl.z) / 4);
-              const cc = flatF ? flat : tile; RC.push(cc[0], cc[1], cc[2]); RK.push(flatF ? 0 : 1);
+              const cc = flatF ? flat : tile; RC.push(cc[0], cc[1], cc[2]); RK.push(flatF ? 0 : tileK);
             }
           }
         }
@@ -900,7 +939,7 @@ export async function init(W) {
   }
 
   // ================================================================ OSM-Hinweis (Lizenz)
-  { const d = document.createElement('div'); d.id = 'osmCredit'; d.textContent = 'Kartendaten © OpenStreetMap-Mitwirkende';
+  { const d = document.createElement('div'); d.id = 'osmCredit'; d.textContent = '© OpenStreetMap-Mitwirkende · Geoportal Berlin · Berlin Partner';
     Object.assign(d.style, { position: 'fixed', right: '8px', top: 'calc(env(safe-area-inset-top, 0px) + ' + (isMobile ? 70 : 64) + 'px)', font: '9px/1.2 system-ui, sans-serif', color: 'rgba(255,255,255,0.5)', textShadow: '0 1px 2px rgba(0,0,0,0.7)', pointerEvents: 'none', zIndex: 5 });
     document.body.appendChild(d); }
 
