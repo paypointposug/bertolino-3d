@@ -538,9 +538,24 @@ export async function buildExterior(ctx) {
       plane(g, t ? std(0xffffff, 0.55, 0, { map: t }) : std(fallback, 0.6), 0, 0, 0.0015, W, H);
       return g;
     };
-    board('board_pasta_white.jpg', 7.58, 8.30, 1.74, 2.62, 0.06, M.black, 0xf2f2ee);
+    const bPfeiler = board('board_pasta_white.jpg', 7.58, 8.30, 1.74, 2.62, 0.06, M.black, 0xf2f2ee);
     { const g = board('board_ciao_black.jpg', 7.66, 8.28, 0.0, 1.39, 0.0, std(0x7a5534, 0.6), 0x1d1f1f); g.position.z = 0.17; g.rotation.x = -0.1; g.position.y = 0.70; }
-    board('board_hallo_white.jpg', 11.55, 12.64, 0.25, 2.49, 0.05, M.black, 0xf2f2ee);
+    const bRechts = board('board_hallo_white.jpg', 11.55, 12.64, 0.25, 2.49, 0.05, M.black, 0xf2f2ee);
+    // Nachher: statt der beiden weißen Tafeln je ein Leuchtkasten (Alu-Rahmen, von innen beleuchtete Front)
+    const lightBox = (name, x0, x1, y0, y1, z) => {
+      const t = tex(name); const W = x1 - x0, H = y1 - y0, D = 0.10;
+      const g = new THREE.Group(); g.position.set((x0 + x1) / 2, (y0 + y1) / 2, z); store.add(g);
+      const hs = new THREE.Mesh(bevGeo(W, H, D, 0, 0, D / 2, 0.012), std(0xd7dbe0, 0.3, 0.85)); hs.castShadow = true; g.add(hs);
+      const fm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.22, map: t || null, emissive: 0xffffff, emissiveMap: t || null, emissiveIntensity: 0 }); emissive(fm, 0.42, 0.1);
+      plane(g, fm, 0, 0, D + 0.002, W - 0.045, H - 0.045);
+      const gl = canvasTex(128, 128, (c) => { const gr = c.createRadialGradient(64, 64, 20, 64, 64, 64); gr.addColorStop(0, 'rgba(255,236,150,0.20)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0, 0, 128, 128); });
+      plane(g, glowReg(new THREE.MeshBasicMaterial({ map: gl, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 0.3, 0.0), 0, 0, 0.004, W * 1.7, H * 1.35).renderOrder = 4;
+      g.visible = false; return g;
+    };
+    const lbPfeiler = lightBox('plan_lb_pfeiler.jpg', 7.58, 8.30, 1.74, 2.62, 0.05);
+    const lbRechts = lightBox('plan_lb_rechts.jpg', 11.55, 12.64, 0.25, 2.49, 0.05);
+    lookHooks.push((lk) => { bPfeiler.visible = bRechts.visible = !lk.neu; lbPfeiler.visible = lbRechts.visible = !!lk.neu; });
+    ctx.dims.push({ a: [11.55, 2.56, 0.25], b: [12.64, 2.56, 0.25], label: '<b>Leuchtkasten</b><br>ca. 1,10 × 2,25 m', v: 'neu' });
     // small LED flood light on top of the HALLO board (visible in fenster.jpg)
     {
       const lg = [bevGeo(0.13, 0.08, 0.06, 0, 0, 0, 0.01), cylBetween([0, -0.02, -0.03], [0, -0.02, -0.12], 0.012, 0.012, 6)];
@@ -689,7 +704,7 @@ export async function buildExterior(ctx) {
     const rimG = new THREE.TorusGeometry(R - 0.004, 0.009, 8, 128); const rim = new THREE.Mesh(rimG, std(0x2c2e31, 0.3, 0.8)); rim.position.set(NEU.logoCx, NEU.logoCy, FZ + D); signNeu.add(rim);
     const lt = tex('plan_nightshop_sign.jpg');
     const faceM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.0, map: lt || null, emissive: 0xffffff, emissiveMap: lt || null, emissiveIntensity: 0 });
-    emissive(faceM, 1.15, 0.25);
+    emissive(faceM, 0.74, 0.22);
     const face = new THREE.Mesh(new THREE.CircleGeometry(R - 0.012, 96), faceM); face.position.set(NEU.logoCx, NEU.logoCy, FZ + D + 0.001); signNeu.add(face);
     const halo = canvasTex(256, 256, (g) => { const grd = g.createRadialGradient(128, 128, 70, 128, 128, 128); grd.addColorStop(0, 'rgba(255,255,255,0.0)'); grd.addColorStop(0.62, 'rgba(235,240,255,0.16)'); grd.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = grd; g.fillRect(0, 0, 256, 256); });
     const hm = glowReg(new THREE.MeshBasicMaterial({ map: halo, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 0.35, 0.0);

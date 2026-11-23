@@ -208,7 +208,7 @@ function setMode(m) {
 }
 document.getElementById('tNight').onclick = () => setMode('night');
 document.getElementById('tDay').onclick = () => setMode('day');
-{ const dn = document.getElementById('tDN'); if (dn) dn.onclick = () => { const night = document.getElementById('tNight').classList.contains('on'); setMode(night ? 'day' : 'night'); dn.textContent = night ? '☀️ Tag' : '🌙 Nacht'; }; }
+{ const dn = document.getElementById('tDN'); if (dn) dn.onclick = () => { const night = document.getElementById('tNight').classList.contains('on'); setMode(night ? 'day' : 'night'); dn.innerHTML = ic(night ? 'sun' : 'moon'); dn.setAttribute('aria-label', night ? 'Tag' : 'Nacht'); }; }
 
 // ---------- dimensions ----------
 const dimGroup = new THREE.Group(); dimGroup.visible = false; scene.add(dimGroup);
@@ -277,20 +277,23 @@ if (plan) {
   tvPanel.appendChild(tvRow('theke', 'TV 2× Theke'));
   tvPanel.classList.add('min');
 }
-// ---------- Leiste unten: 5 Schritte · eine Karte klappt auf (auch beim Antippen im Bild) und mit ✕ wieder zu ----------
+// ---------- Leiste unten (Glas, Icons): 5 Schritte · eine Karte klappt auf (auch beim Antippen im Bild) und mit ✕ wieder zu ----------
 let curView = 'front', spkCur = 'b', cardKey = null;
+const ICON = {"store": "<path d=\"M4 10.5V20h16v-9.5\"/><path d=\"M3 10l1.6-5h14.8L21 10a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z\"/><path d=\"M10 20v-5h4v5\"/>", "bulb": "<path d=\"M9.5 18h5\"/><path d=\"M10.5 21h3\"/><path d=\"M12 3a6 6 0 0 0-4 10.5c.7.7 1.2 1.5 1.3 2.5h5.4c.1-1 .6-1.8 1.3-2.5A6 6 0 0 0 12 3z\"/>", "tv": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M8 21h8\"/><path d=\"M12 17v4\"/>", "walk": "<circle cx=\"13\" cy=\"4.3\" r=\"1.7\"/><path d=\"M9.5 21l2.2-6.2-2.4-2.6 1.2-4.9 3 .7 1.9 3 3 1\"/><path d=\"M10.5 7.3L7.4 9.2 6.8 12.6\"/><path d=\"M11.7 14.8l3.1 2.6 1 3.6\"/>", "down": "<path d=\"M6 9l6 6 6-6\"/>", "x": "<path d=\"M6 6l12 12M18 6L6 18\"/>", "menu": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "quer": "<rect x=\"3\" y=\"7\" width=\"18\" height=\"10\" rx=\"1.8\"/>", "hoch": "<rect x=\"7\" y=\"3\" width=\"10\" height=\"18\" rx=\"1.8\"/>", "ruler": "<path d=\"M3 16L16 3l5 5L8 21z\"/><path d=\"M7.5 11.5l2 2M10.5 8.5l2 2M13.5 5.5l2 2\"/>", "moon": "<path d=\"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z\"/>", "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/>", "cup": "<path d=\"M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z\"/><path d=\"M16 10h1.5a2.5 2.5 0 0 1 0 5H16\"/><path d=\"M8 3v2.5M11.5 3v2.5\"/>", "pizza": "<path d=\"M12 21L3.5 6.5a17 17 0 0 1 17 0z\"/><circle cx=\"10\" cy=\"9.5\" r=\"1\"/><circle cx=\"14\" cy=\"11\" r=\"1\"/><circle cx=\"11.5\" cy=\"14.5\" r=\"1\"/>", "play": "<path d=\"M8 5l11 7-11 7z\"/>", "stop": "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\"/>", "joy": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"3.4\"/>", "eye": "<path d=\"M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"2.8\"/>", "tap": "<path d=\"M9 11V5.5a1.5 1.5 0 0 1 3 0V11\"/><path d=\"M12 10.5a1.5 1.5 0 0 1 3 0V12\"/><path d=\"M15 11.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a5 5 0 0 1-4.2-2.3L5 15.6a1.5 1.5 0 0 1 2.4-1.8L9 15.5V11\"/>", "rot": "<rect x=\"8\" y=\"2.5\" width=\"8\" height=\"13\" rx=\"1.6\"/><path d=\"M4 17a9 9 0 0 0 15.5 2\"/><path d=\"M20 16v3.2h-3.2\"/>"};
+const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
 const cardEl = document.getElementById('opts'), stepsEl = document.getElementById('steps'), rotEl = document.getElementById('rot');
 const STEPS = [
-  { k: 'aussen', icon: '🏪', name: 'Außen', view: 'front' },
-  { k: 'reklame', icon: '💡', name: 'Reklame', view: 'reklame' },
-  { k: 'tvk', icon: '📺', name: 'TV Kasse', view: 'tvBalken' },
-  { k: 'tvt', icon: '📺', name: 'TV Theke', view: 'tvTheke' },
-  { k: 'lauf', icon: '🚶', name: 'Laufen' },
+  { k: 'aussen', icon: 'store', name: 'Außen', view: 'front' },
+  { k: 'reklame', icon: 'bulb', name: 'Reklame', view: 'reklame' },
+  { k: 'tvk', icon: 'tv', name: 'TV Kasse', view: 'tvBalken' },
+  { k: 'tvt', icon: 'tv', name: 'TV Theke', view: 'tvTheke' },
+  { k: 'lauf', icon: 'walk', name: 'Laufen' },
 ];
-const TITLE = { aussen: 'Von außen ansehen', reklame: 'Spätkauf-Logo wählen', tvk: '5 Fernseher an der Kasse', tvt: '2 Fernseher über der Theke', lauf: 'Selbst durch den Laden laufen', night: 'Nightshop-Coffee-Logo', bert: 'Bertolino-Leuchtkasten', panel: 'Bertolino-Schriftzug' };
+const TITLE = { lbox: 'Leuchtkästen am Fenster', aussen: 'Ansicht', reklame: 'Spätkauf-Logo', tvk: '5 Fernseher · Kasse', tvt: '2 Fernseher · Theke', lauf: 'Laufen', night: 'Nightshop-Logo', bert: 'Bertolino-Leuchtkasten', panel: 'Bertolino-Schriftzug' };
+const CICON = { lbox: 'bulb', aussen: 'store', reklame: 'bulb', tvk: 'tv', tvt: 'tv', lauf: 'walk', night: 'cup', bert: 'pizza', panel: 'pizza' };
 const stepBtns = {};
-STEPS.forEach(s => { const b = document.createElement('button'); b.innerHTML = `<span class="i">${s.icon}</span>${s.name}`; b.onclick = () => selectStep(s.k, true); stepsEl.appendChild(b); stepBtns[s.k] = b; });
-{ const b = document.createElement('button'); b.className = 'hide'; b.innerHTML = '<span class="i">▾</span>zu'; b.setAttribute('aria-label', 'Leiste zuklappen'); b.onclick = () => setUI(false); stepsEl.appendChild(b);
+STEPS.forEach(s => { const b = document.createElement('button'); b.dataset.k = s.k; b.innerHTML = ic(s.icon) + `<span>${s.name}</span>`; b.onclick = () => selectStep(s.k, true); stepsEl.appendChild(b); stepBtns[s.k] = b; });
+{ const b = document.createElement('button'); b.className = 'hide'; b.innerHTML = ic('down'); b.setAttribute('aria-label', 'Leiste zuklappen'); b.onclick = () => setUI(false); stepsEl.appendChild(b);
   const sh = document.getElementById('uishow'); if (sh) sh.onclick = () => setUI(true); }
 function setUI(on) { document.body.classList.toggle('uioff', !on); requestRender(); }
 function markStep(k) { Object.entries(stepBtns).forEach(([kk, b]) => b.classList.toggle('on', kk === k)); }
@@ -298,42 +301,46 @@ function needNeu() { if (variant !== 'neu') setVariant('neu'); }
 function setSpk(k) { spkCur = k; ext.setSpk && ext.setSpk(k); requestRender(); }
 window.__spk = (k) => setSpk(k);
 function showZones() { const z = document.getElementById('zones'); if (z && isMobile) { z.style.display = ''; z.style.opacity = 1; clearTimeout(z._t); z._t = setTimeout(() => { z.style.opacity = 0; }, 6000); } }
-function openCard(k) { if (['tvk', 'tvt', 'night', 'bert', 'panel'].includes(k)) needNeu(); cardKey = k; if (document.body.classList.contains('uioff')) setUI(true); if (stepBtns[k] && !tp.active) markStep(k); renderCard(); }
+function openCard(k) { if (['tvk', 'tvt', 'night', 'bert', 'panel', 'lbox'].includes(k)) needNeu(); cardKey = k; if (document.body.classList.contains('uioff')) setUI(true); if (stepBtns[k] && !tp.active) markStep(k); renderCard(); }
 function closeCard() { cardKey = null; renderCard(); }
 function renderCard() {
   cardEl.innerHTML = '';
   if (!cardKey) { cardEl.classList.add('off'); updateRot(); requestRender(); return; }
   cardEl.classList.remove('off');
-  const hd = document.createElement('div'); hd.className = 'chead'; const tt = document.createElement('b'); tt.textContent = TITLE[cardKey]; hd.appendChild(tt);
-  const x = document.createElement('button'); x.className = 'cx'; x.textContent = '✕'; x.setAttribute('aria-label', 'zuklappen'); x.onclick = closeCard; hd.appendChild(x); cardEl.appendChild(hd);
-  const row = document.createElement('div'); row.className = 'crow'; cardEl.appendChild(row);
-  const chip = (label, isOn, fn) => { const b = document.createElement('button'); b.textContent = label; if (isOn) b.classList.add('on'); b.onclick = fn; row.appendChild(b); return b; };
-  const info = (txt) => { const d = document.createElement('div'); d.className = 'info'; d.textContent = txt; cardEl.appendChild(d); };
   const s = cardKey;
+  const hd = document.createElement('div'); hd.className = 'chead'; hd.innerHTML = ic(CICON[s]) + `<b>${TITLE[s]}</b>`;
+  const x = document.createElement('button'); x.className = 'cx'; x.innerHTML = ic('x'); x.setAttribute('aria-label', 'zuklappen'); x.onclick = closeCard; hd.appendChild(x); cardEl.appendChild(hd);
+  const row = document.createElement('div'); row.className = 'crow'; cardEl.appendChild(row);
+  const seg = (cls) => { const d = document.createElement('div'); d.className = 'seg' + (cls ? ' ' + cls : ''); row.appendChild(d); return d; };
+  const opt = (par, html, isOn, fn, label) => { const b = document.createElement('button'); b.innerHTML = html; if (label) { b.setAttribute('aria-label', label); b.title = label; } if (isOn) b.classList.add('on'); b.onclick = fn; par.appendChild(b); return b; };
+  const info = (txt) => { const d = document.createElement('div'); d.className = 'info'; d.textContent = txt; cardEl.appendChild(d); };
   if (s === 'aussen') {
-    [['front', 'Vorne'], ['links', 'Links'], ['rechts', 'Rechts'], ['bertolino', 'Bertolino'], ['haus', 'Ganzes Haus']].forEach(([k, l]) => chip(l, !tp.active && curView === k, () => { markStep('aussen'); goView(k); renderCard(); }));
-    chip('📏 Maße', dimGroup.visible, () => { document.getElementById('tDim').click(); renderCard(); });
+    const g = seg('tight');
+    [['front', 'Vorne'], ['links', 'Links'], ['rechts', 'Rechts'], ['bertolino', 'Bertolino'], ['haus', 'Haus']].forEach(([k, l]) => opt(g, l, !tp.active && curView === k, () => { markStep('aussen'); goView(k); renderCard(); }));
+    opt(seg('ic'), ic('ruler'), dimGroup.visible, () => { document.getElementById('tDim').click(); renderCard(); }, 'Maße');
   } else if (s === 'reklame') {
-    [['alt', 'Wie jetzt'], ['a', 'Logo A'], ['b', 'Logo B'], ['c', 'Logo C']].forEach(([k, l]) => chip(l, variant === 'neu' && spkCur === k, () => { needNeu(); setSpk(k); renderCard(); }));
-    info('Das Nasenschild links wechselt mit.');
+    const g = seg();
+    [['alt', 'Jetzt'], ['a', 'A'], ['b', 'B'], ['c', 'C']].forEach(([k, l]) => opt(g, l, variant === 'neu' && spkCur === k, () => { needNeu(); setSpk(k); renderCard(); }, k === 'alt' ? 'Wie jetzt' : 'Logo ' + l));
   } else if (s === 'tvk' || s === 'tvt') {
     const area = s === 'tvk' ? 'balken' : 'theke'; const st = plan.state[area];
-    [43, 50, 55].forEach(z => chip(z + ' Zoll', st.size === z, () => { needNeu(); plan.setTV(area, z, null); requestRender(); renderCard(); }));
-    chip('Quer', st.orient === 'q', () => { needNeu(); plan.setTV(area, null, 'q'); requestRender(); renderCard(); });
-    chip('Hoch', st.orient === 'h', () => { needNeu(); plan.setTV(area, null, 'h'); requestRender(); renderCard(); });
+    const g = seg(); [43, 50, 55].forEach(z => opt(g, z + '″', st.size === z, () => { needNeu(); plan.setTV(area, z, null); requestRender(); renderCard(); }, z + ' Zoll'));
+    const o = seg('ic');
+    opt(o, ic('quer'), st.orient === 'q', () => { needNeu(); plan.setTV(area, null, 'q'); requestRender(); renderCard(); }, 'Quer');
+    opt(o, ic('hoch'), st.orient === 'h', () => { needNeu(); plan.setTV(area, null, 'h'); requestRender(); renderCard(); }, 'Hoch');
     const sz = plan.sizes[st.size]; const q = st.orient === 'q';
     const w = Math.round((q ? sz.w : sz.h) * 100), h = Math.round((q ? sz.h : sz.w) * 100), n = area === 'balken' ? 5 : 2;
-    info(`${n} Fernseher · je ca. ${w} × ${h} cm · zusammen ca. ${((n * w + (n - 1) * 4) / 100).toFixed(2).replace('.', ',')} m breit`);
+    info(`je ${w} × ${h} cm · zusammen ${((n * w + (n - 1) * 4) / 100).toFixed(2).replace('.', ',')} m breit`);
   } else if (s === 'lauf') {
-    chip('Vor die Tür', false, () => { placePlayer(5.3, 3.2, Math.PI); tp.active = false; engage('snap'); showZones(); });
-    chip('In den Laden', false, () => { placePlayer(4.9, -1.9, Math.PI); tp.active = false; engage('snap'); showZones(); });
-    chip('Küche ansehen', !tp.active && curView === 'kueche', () => { goView('kueche'); renderCard(); });
-    chip(tour ? '■ Stopp' : '▶ Rundgang', !!tour, () => { tourBtn.onclick(); renderCard(); });
-    info(isMobile ? 'Linker Daumen = laufen · rechter Daumen = umschauen · Fernseher oder Schild antippen = Auswahl' : 'W A S D = laufen · Maus ziehen = umschauen · Fernseher oder Schild anklicken = Auswahl');
-  } else if (s === 'night') { info('Rund, weiß leuchtend auf Schwarz · Ø ca. 1,50 m'); info('Ihr Logo ist sauber nachgezeichnet und fertig für den Werbetechniker.'); }
-  else if (s === 'bert') { info('Leuchtkasten ca. 2,70 × 1,85 m · Logo Ø ca. 1,70 m'); info('Leuchtet von innen, Tag und Nacht gut zu sehen.'); }
-  else if (s === 'panel') { info('Schriftzug auf der Platte unter dem Fenster · ca. 3,0 × 0,9 m'); }
-  if (['night', 'bert', 'panel'].includes(s)) { chip('Vorher', variant !== 'neu', () => { setVariant('ist'); }); chip('Nachher', variant === 'neu', () => { setVariant('neu'); }); }
+    const g = seg();
+    opt(g, 'Draußen', false, () => { placePlayer(5.3, 3.2, Math.PI); tp.active = false; engage('snap'); showZones(); });
+    opt(g, 'Drinnen', false, () => { placePlayer(4.9, -1.9, Math.PI); tp.active = false; engage('snap'); showZones(); });
+    opt(g, 'Küche', !tp.active && curView === 'kueche', () => { goView('kueche'); renderCard(); });
+    opt(seg('ic'), ic(tour ? 'stop' : 'play'), !!tour, () => { tourBtn.onclick(); renderCard(); }, 'Rundgang');
+    info(isMobile ? 'Links laufen · rechts umschauen' : 'W A S D laufen · Maus umschauen');
+  } else {
+    info(s === 'lbox' ? 'links 0,70 × 0,90 m · rechts 1,10 × 2,25 m' : s === 'night' ? 'Rund, weiß leuchtend · Ø ca. 1,50 m' : s === 'bert' ? 'ca. 2,70 × 1,85 m · Logo Ø ca. 1,70 m' : 'Unter dem Fenster · ca. 3,0 × 0,9 m');
+    const g = seg(); opt(g, 'Vorher', variant !== 'neu', () => { setVariant('ist'); }); opt(g, 'Nachher', variant === 'neu', () => { setVariant('neu'); });
+  }
   updateRot(); requestRender();
 }
 function selectStep(k, move) {
@@ -343,7 +350,7 @@ function selectStep(k, move) {
   if (move) goView(s.view);
   cardKey = k; renderCard();
 }
-function updateRot() { if (!rotEl) return; const portrait = innerHeight > innerWidth * 1.1; rotEl.style.display = portrait && isMobile && !tp.active && (cardKey === 'tvk' || cardKey === 'tvt') ? 'block' : 'none'; }
+function updateRot() { if (!rotEl) return; const portrait = innerHeight > innerWidth * 1.1; rotEl.style.display = portrait && isMobile && !tp.active && (cardKey === 'tvk' || cardKey === 'tvt') ? 'flex' : 'none'; }
 addEventListener('resize', updateRot);
 window.__open = (k) => openCard(k); window.__tp = tp; window.__P = P; window.__tap = (x, y) => tapAt(x, y);
 
@@ -405,7 +412,7 @@ new GLTFLoader().load('models/person.glb', (g) => {
 });
 function placePlayer(x, z, face) { const [nx, nz] = nearestFree(x, z); P.x = nx; P.z = nz; if (face !== undefined) P.face = face; P.speed = 0; P.root.position.set(P.x, 0, P.z); P.root.rotation.y = P.face; P.settle = 0.4; }
 // wo die Figur steht, wenn eine feste Ansicht gewählt wird (als Größenvergleich im Bild)
-const SPOT = { front: [5.6, 3.3], links: [5.6, 3.3], rechts: [5.6, 3.3], haus: [5.6, 3.3], reklame: [6.4, 3.6], bertolino: [8.6, 2.4], innen: [4.9, -1.9], tvBalken: [5.2, -2.3], tvTheke: [6.3, -1.2], kueche: [7.0, -1.6] };
+const SPOT = { front: [5.6, 3.3], links: [5.6, 3.3], rechts: [5.6, 3.3], haus: [5.6, 3.3], reklame: [6.4, 3.6], bertolino: [12.9, 3.4], innen: [4.9, -1.9], tvBalken: [5.2, -2.3], tvTheke: [6.3, -1.2], kueche: [7.0, -1.6] };
 function placeForView(k) { const s = SPOT[k]; if (!s) return; const v = V[k]; placePlayer(s[0], s[1], Math.atan2(v.target[0] - s[0], v.target[2] - s[1])); }
 
 // Kamera hinter die Figur holen
@@ -511,17 +518,19 @@ function play(dt) {
 
 // ---------- antippen: Fernseher, Schilder, Leuchtkästen → Karte klappt auf ----------
 const HOT = [
-  { k: 'tvk', icon: '📺', at: [4.375, 2.95, -3.72], side: 'in', box: [0.3, 2.45, -3.95, 8.45, 3.4, -3.6], neu: true },
-  { k: 'tvt', icon: '📺', at: [7.55, 2.8, -1.95], side: 'in', box: [7.3, 2.3, -3.2, 7.8, 3.3, -0.7], neu: true },
-  { k: 'reklame', icon: '💡', at: [3.6, 4.2, 0.3], side: 'out', box: [0.5, 3.35, 0.05, 6.7, 5.0, 0.4] },
-  { k: 'reklame', icon: '💡', at: [0.06, 4.37, 0.65], side: 'out', box: [-0.1, 3.7, 0.15, 0.25, 5.05, 1.1], nomark: true },
-  { k: 'night', icon: '☕', at: [7.85, 4.22, 0.32], side: 'out', box: [7.05, 3.4, 0.05, 8.65, 5.0, 0.4], neu: true },
-  { k: 'bert', icon: '🍕', at: [10.65, 4.05, 0.34], side: 'out', box: [9.3, 3.1, 0.05, 12.0, 5.0, 0.45], neu: true },
-  { k: 'panel', icon: '🍕', at: [9.9, 0.6, 0.12], side: 'out', box: [8.4, 0.1, 0.0, 11.4, 1.0, 0.2], neu: true, nomark: true },
+  { k: 'tvk', icon: 'tv', at: [4.375, 2.42, -3.72], side: 'in', box: [0.3, 2.45, -3.95, 8.45, 3.4, -3.6], neu: true },
+  { k: 'tvt', icon: 'tv', at: [7.55, 2.3, -1.95], side: 'in', box: [7.3, 2.3, -3.2, 7.8, 3.3, -0.7], neu: true },
+  { k: 'reklame', icon: 'bulb', at: [6.35, 3.42, 0.3], side: 'out', box: [0.5, 3.35, 0.05, 6.7, 5.0, 0.4] },
+  { k: 'reklame', icon: 'bulb', at: [0.06, 4.37, 0.65], side: 'out', box: [-0.1, 3.7, 0.15, 0.25, 5.05, 1.1], nomark: true },
+  { k: 'night', icon: 'cup', at: [8.47, 3.52, 0.32], side: 'out', box: [7.05, 3.4, 0.05, 8.65, 5.0, 0.4], neu: true },
+  { k: 'bert', icon: 'pizza', at: [11.9, 3.2, 0.34], side: 'out', box: [9.3, 3.1, 0.05, 12.0, 5.0, 0.45], neu: true },
+  { k: 'lbox', icon: 'bulb', at: [12.72, 2.3, 0.2], side: 'out', box: [11.5, 0.2, 0.0, 12.7, 2.55, 0.25], neu: true },
+  { k: 'lbox', icon: 'bulb', at: [7.94, 2.18, 0.2], side: 'out', box: [7.55, 1.7, 0.0, 8.33, 2.66, 0.25], neu: true, nomark: true },
+  { k: 'panel', icon: 'pizza', at: [9.9, 0.6, 0.12], side: 'out', box: [8.4, 0.1, 0.0, 11.4, 1.0, 0.2], neu: true, nomark: true },
 ];
 const hotsEl = document.getElementById('hots'); const ray = new THREE.Raycaster(); const _v2 = new THREE.Vector2(), _p3 = new THREE.Vector3();
 HOT.forEach(h => { h.b3 = new THREE.Box3(new THREE.Vector3(h.box[0], h.box[1], h.box[2]), new THREE.Vector3(h.box[3], h.box[4], h.box[5])); h.p = new THREE.Vector3(...h.at);
-  if (!h.nomark && hotsEl) { const b = document.createElement('button'); b.className = 'hot'; b.textContent = h.icon; b.onclick = () => openCard(h.k); hotsEl.appendChild(b); h.el = b; } });
+  if (!h.nomark && hotsEl) { const b = document.createElement('button'); b.className = 'hot'; b.innerHTML = ic(h.icon); b.onclick = () => openCard(h.k); hotsEl.appendChild(b); h.el = b; } });
 const isIn = () => tp.active ? P.z < 0.2 : camera.position.z < 0.3;
 const hotOK = (h) => (!h.neu || variant === 'neu') && (h.side === 'out' ? !isIn() : isIn());
 function tapAt(x, y) {
@@ -543,6 +552,9 @@ function updateHot() {
 controls.addEventListener('start', () => { tween = null; stopTour(); Object.values(btns).forEach(b => b.classList.remove('on')); });
 const clock = new THREE.Clock();
 function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+const RES = { can: isMobile && devicePixelRatio > 1.6, hi: false, idle: 0, lo: Math.min(devicePixelRatio, 1.5), top: Math.min(devicePixelRatio, 2.25) };
+function setRes(hi) { RES.hi = hi; const pr = hi ? RES.top : RES.lo; renderer.setPixelRatio(pr); composer.setPixelRatio(pr); }
+window.__res = RES;
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.1);
@@ -553,8 +565,10 @@ function frame() {
     camera.fov = tween.from.fov + (tween.to.fov - tween.from.fov) * k; camera.updateProjectionMatrix();
     if (tween.t >= 1) tween = tween.next || null; dirty = true;
   }
-  if (play(dt)) dirty = true;
+  let moving = !!tween;
+  if (play(dt)) { dirty = true; moving = true; }
   if (!tp.active && controls.update()) dirty = true;
+  if (RES.can) { if (moving) { RES.idle = 0; if (RES.hi) setRes(false); } else { RES.idle += dt; if (!RES.hi && RES.idle > 0.4) { setRes(true); dirty = true; } } }
   if (camera.position.y < 0.3) { camera.position.y = 0.3; dirty = true; }
   frameCounter++;
   if (ext.animate && ext.animate(dt)) dirty = true;

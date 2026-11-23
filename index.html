@@ -97,6 +97,59 @@
   button.mini { font-size:12px; padding:5px 9px; box-shadow:none; }
   #tVor, #tNach { font-weight:600; }
   .note { position:fixed; left:12px; top:110px; max-width:300px; font-size:11px; color:#fff; background:#000a; border-radius:8px; padding:6px 9px; display:none; }
+
+  /* ---------- Glas-Design + Icons ---------- */
+  svg.ic { width:22px; height:22px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
+  .glass, .title { background:rgba(24,26,34,.42); -webkit-backdrop-filter:blur(22px) saturate(170%); backdrop-filter:blur(22px) saturate(170%); border:1px solid rgba(255,255,255,.22); box-shadow:0 10px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.22); color:#fff; }
+  .title { border-radius:16px; padding:8px 13px; }
+  .title span { color:rgba(255,255,255,.7); }
+  .toggles { gap:8px; flex-wrap:nowrap; align-items:center; }
+  .seg { display:flex; gap:2px; padding:3px; border-radius:15px; background:rgba(255,255,255,.12); min-width:0; }
+  .seg.glass { background:rgba(24,26,34,.42); }
+  .seg button { flex:1 1 auto; min-width:0; min-height:40px; padding:0 12px; border:0; border-radius:12px; background:transparent; color:#fff; font-size:15px; font-weight:700; box-shadow:none; display:flex; align-items:center; justify-content:center; transition:background .15s, color .15s; }
+  .seg button.on { background:rgba(255,255,255,.94); color:#14161b; }
+  .seg.ic { flex:none; } .seg.ic button { flex:none; width:44px; padding:0; }
+  .seg.glass button, #tVor, #tNach { min-height:36px; font-size:14px; font-weight:700; padding:0 12px; }
+  .gbtn { width:42px; height:42px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .opts { width:min(100%, 420px); max-width:none; padding:10px; gap:8px; border-radius:22px; background:rgba(24,26,34,.42); flex-direction:column; align-items:stretch; flex-wrap:nowrap; }
+  .opts.off { display:none; }
+  .chead { padding:0 0 0 4px; gap:8px; justify-content:flex-start; }
+  .chead b { flex:1; font-size:15px; font-weight:700; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .opts button.cx { width:30px; min-height:30px; height:30px; padding:0; border-radius:50%; border:0; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; }
+  .opts button.cx svg.ic { width:16px; height:16px; stroke-width:2.2; }
+  .crow { display:flex; gap:8px; flex-wrap:nowrap; justify-content:stretch; }
+  .crow .seg:not(.ic) { flex:1; }
+  .opts .info { width:auto; font-size:12.5px; color:rgba(255,255,255,.72); text-align:center; padding:0 4px 1px; }
+  .steps { gap:2px; padding:5px; border-radius:24px; background:rgba(24,26,34,.42); }
+  .steps button { min-width:60px; padding:7px 6px 6px; gap:3px; border-radius:18px; color:rgba(255,255,255,.88); font-size:11px; font-weight:600; background:transparent; border:0; }
+  .steps button svg.ic { width:24px; height:24px; }
+  .steps button.on { background:rgba(255,255,255,.94); color:#14161b; }
+  .steps button.hide { min-width:38px; justify-content:center; color:rgba(255,255,255,.7); }
+  .rot { display:none; align-items:center; gap:8px; border-radius:9999px; padding:7px 14px; font-size:13px; font-weight:600; }
+  .rot svg.ic { width:18px; height:18px; }
+  #uishow { width:48px; height:48px; padding:0; border-radius:50%; align-items:center; justify-content:center; }
+  .uioff #uishow { display:flex; }
+  .hot { background:rgba(24,26,34,.42); -webkit-backdrop-filter:blur(14px) saturate(170%); backdrop-filter:blur(14px) saturate(170%); border:1.5px solid rgba(255,255,255,.75); color:#fff; align-items:center; justify-content:center; }
+  .hot { width:36px; height:36px; margin:-18px 0 0 -18px; }
+  .hot svg.ic { width:18px; height:18px; margin:7.5px auto; }
+  .zones span { display:flex; align-items:center; gap:7px; border-radius:9999px; padding:7px 13px; font-size:13px; font-weight:600; }
+  .zones svg.ic { width:17px; height:17px; }
+  .help { background:rgba(0,0,0,.32); }
+  .hcard { border-radius:26px; padding:20px 20px 18px; width:min(330px, 100%); background:rgba(24,26,34,.5); }
+  .hcard h3 { margin:0 0 6px; font-size:20px; font-weight:800; color:#fff; }
+  .hrow { border-top:1px solid rgba(255,255,255,.14); padding:11px 0; gap:13px; font-size:15px; color:rgba(255,255,255,.86); }
+  .hrow b { color:#fff; }
+  .hrow svg.ic { width:24px; height:24px; }
+  #helpOk { margin-top:8px; background:rgba(255,255,255,.94); color:#14161b; }
+  #uishow { background:rgba(24,26,34,.42); color:#fff; }
+  .seg.tight button { padding:0 7px; font-size:14px; }
+  @media (max-width:520px) { .title { max-width:132px; } .title b { font-size:13.5px; line-height:1.2; } }
+  @media (orientation:landscape) and (max-height:520px) {
+    .opts { order:2; width:auto; min-width:290px; max-width:calc(100% - 372px); padding:8px; gap:6px; }
+    .steps button { min-width:54px; padding:6px 4px 5px; }
+    .seg button { min-height:38px; }
+    .zones { bottom:112px; }
+  }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
@@ -108,9 +161,8 @@
 <div class="top">
   <div class="title"><b>Spätkauf &amp; Bertolino</b><span>Müllerstraße 138 D · Berlin-Wedding</span></div>
   <div class="toggles">
-    <button id="tVor">Vorher</button>
-    <button id="tNach" class="on">Nachher</button>
-    <button id="tDN">🌙 Nacht</button>
+    <div class="seg glass"><button id="tVor">Vorher</button><button id="tNach" class="on">Nachher</button></div>
+    <button id="tDN" class="gbtn glass" aria-label="Nacht"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
     <button id="tNight" class="on" style="display:none">Nacht</button>
     <button id="tDay" style="display:none">Tag</button>
     <button id="tDim" style="display:none">Maße</button>
@@ -118,14 +170,14 @@
 </div>
 <div class="bar" id="views" style="display:none"></div>
 <div id="hots"></div>
-<button id="uishow" aria-label="Leiste aufklappen">☰ Menü</button>
-<div class="ui"><div class="rot" id="rot">📱↻ Handy quer halten – dann sehen Sie alle Fernseher</div><div class="opts" id="opts"></div><div class="steps" id="steps"></div></div>
-<div class="zones" id="zones"><span>🕹️ hier laufen</span><span>hier umschauen 👀</span></div>
-<div class="help" id="help"><div class="hcard">
-  <h3>So einfach geht's</h3>
-  <div class="hrow"><span class="hi">🕹️</span><span><b>Laufen wie im Spiel</b><br>linker Daumen = laufen · rechter Daumen = umschauen</span></div>
-  <div class="hrow"><span class="hi">👆</span><span><b>Antippen</b><br>Fernseher oder Schild antippen – die Auswahl klappt auf, ✕ klappt sie zu</span></div>
-  <div class="hrow"><span class="hi">⬇️</span><span><b>Unten</b><br>Außen · Reklame · TV Kasse · TV Theke springen direkt hin</span></div>
+<button id="uishow" class="glass" aria-label="Menü aufklappen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+<div class="ui"><div class="rot glass" id="rot"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2.5" width="8" height="13" rx="1.6"/><path d="M4 17a9 9 0 0 0 15.5 2"/><path d="M20 16v3.2h-3.2"/></svg><span>Handy quer halten</span></div><div class="opts glass" id="opts"></div><div class="steps glass" id="steps"></div></div>
+<div class="zones" id="zones"><span class="glass"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/></svg>laufen</span><span class="glass">umschauen<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span></div>
+<div class="help" id="help"><div class="hcard glass">
+  <h3>So geht's</h3>
+  <div class="hrow"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/></svg><span><b>Laufen</b> – links laufen, rechts umschauen</span></div>
+  <div class="hrow"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 10.5a1.5 1.5 0 0 1 3 0V12"/><path d="M15 11.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a5 5 0 0 1-4.2-2.3L5 15.6a1.5 1.5 0 0 1 2.4-1.8L9 15.5V11"/></svg><span><b>Antippen</b> – Fernseher oder Schild</span></div>
+  <div class="hrow"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span><b>Unten</b> – direkt hinspringen</span></div>
   <button id="helpOk">Los geht's</button>
 </div></div>
 <div class="tvpanel" id="tvpanel"></div>
