@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildExterior } from './exterior.js?v=11232147';
+import { buildExterior } from './exterior.js?v=11232155';
 
 let dirty = true;
 function requestRender() { dirty = true; }
@@ -38,7 +38,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.target.set(6.6, 2.6, 0);
 controls.minDistance = 0.4;
-controls.maxDistance = 60;
+controls.maxDistance = 400;   // Block-Übersicht
 controls.maxPolarAngle = Math.PI * 0.8;
 controls.screenSpacePanning = true;
 // wie ein Foto: 1 Finger schiebt das Bild, 2 Finger zoomen genau an die Stelle zwischen den Fingern
@@ -65,14 +65,14 @@ const loadbar = document.getElementById('loadbar');
 manager.onProgress = (url, a, b) => { loadbar.style.width = Math.round(100 * a / Math.max(b, 1)) + '%'; requestRender(); };
 const texLoader = new THREE.TextureLoader();
 let manifest = {};
-try { manifest = await (await fetch('tex/manifest.json?v=11232147', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
+try { manifest = await (await fetch('tex/manifest.json?v=11232155', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const texCache = new Map();
 function tex(name, opts = {}) {
   if (!manifest[name]) return null;
   const key = name + JSON.stringify(opts);
   if (texCache.has(key)) return texCache.get(key);
-  const t = texLoader.load('tex/' + name + '?v=11232147', () => requestRender());
+  const t = texLoader.load('tex/' + name + '?v=11232155', () => requestRender());
   t.colorSpace = opts.srgb === false ? THREE.NoColorSpace : THREE.SRGBColorSpace;
   t.anisotropy = Math.min(maxAniso, 8);
   if (opts.repeat || opts.wrap) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
@@ -87,11 +87,11 @@ const ctx = { frameId: () => frameCounter, resizeHooks: [], scene, tex, renderer
 const ext = await buildExterior(ctx);
 let interior = null;
 try {
-  const mod = await import('./interior.js?v=11232147');
+  const mod = await import('./interior.js?v=11232155');
   interior = mod.buildInterior(ctx);
 } catch (e) { console.warn('Innenraum nicht geladen', e); }
 let plan = null;
-try { const pm = await import('./plan.js?v=11232147'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
+try { const pm = await import('./plan.js?v=11232155'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
 
 // ---------- views ----------
 const V = {
@@ -378,11 +378,11 @@ const HEAD = 1.6;
 
 // Begehbarkeits-Karte (tex/nav.png: R = Person gesperrt, G = Kamera gesperrt; 0,1 m je Pixel)
 const NAV = { ok: false, X0: -14, Z0: -9, CS: 0.1, W: 0, H: 0, d: null };
-{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11232147'; }
+{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11232155'; }
 // grobe Stadt-Karte (city/nav_city.png, 0,25 m: R = Person/Auto gesperrt, G = Kamera gesperrt, B = Fahrbahn)
 const CNAV = { ok: false, X0: 0, Z0: 0, CS: 0.25, W: 0, H: 0, d: null };
-fetch('city/city.json?v=11232147').then(r => r.ok ? r.json() : null).then(cj => { if (!cj) return; window.__cityJSON = cj; Object.assign(CNAV, { X0: cj.nav.X0, Z0: cj.nav.Z0, CS: cj.nav.CS });
-  const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); CNAV.d = g.getImageData(0, 0, im.width, im.height).data; CNAV.W = im.width; CNAV.H = im.height; CNAV.ok = true; requestRender(); }; im.src = 'city/nav_city.png?v=11232147'; }).catch(() => {});
+fetch('city/city.json?v=11232155').then(r => r.ok ? r.json() : null).then(cj => { if (!cj) return; window.__cityJSON = cj; Object.assign(CNAV, { X0: cj.nav.X0, Z0: cj.nav.Z0, CS: cj.nav.CS });
+  const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); CNAV.d = g.getImageData(0, 0, im.width, im.height).data; CNAV.W = im.width; CNAV.H = im.height; CNAV.ok = true; requestRender(); }; im.src = 'city/nav_city.png?v=11232155'; }).catch(() => {});
 function cnavAt(x, z, ch) {
   if (!CNAV.ok) return ch === 2 ? false : !(z > -0.2 && z < 40 && x > -60 && x < 140);
   const i = Math.floor((x - CNAV.X0) / CNAV.CS), j = Math.floor((z - CNAV.Z0) / CNAV.CS);
@@ -425,7 +425,7 @@ function dress(mesh) { // Kleidung über die Knochen einfärben: Kopf/Hände Hau
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.renderOrder = 2; P.root.add(sh);
 }
 scene.add(P.root);
-Promise.all([new Promise((res, rej) => new GLTFLoader().load('models/person.glb?v=11232147', res, undefined, rej)), fetch('models/anim.json?v=11232147').then(r => r.json())]).then(([g, anim]) => {
+Promise.all([new Promise((res, rej) => new GLTFLoader().load('models/person.glb?v=11232155', res, undefined, rej)), fetch('models/anim.json?v=11232155').then(r => r.json())]).then(([g, anim]) => {
   const m = g.scene; m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; if (o.material.map) { o.material.map.anisotropy = Math.min(maxAniso, 8); o.material.metalness = 0; o.material.roughness = 0.82; o.material.envMapIntensity = 0.7; } else dress(o); } });
   const bb = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.70 / Math.max(0.1, bb.max.y - bb.min.y));
   P.root.add(m); P.mixer = new THREE.AnimationMixer(m);
@@ -585,6 +585,10 @@ function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) 
 const RES = { can: isMobile && devicePixelRatio > 1.2, hi: false, idle: 0, ema: 0.02, lo: Math.min(devicePixelRatio, 2), top: Math.min(devicePixelRatio, 2.5) };
 function setRes(hi) { RES.hi = hi; const pr = hi ? RES.top : RES.lo; renderer.setPixelRatio(pr); composer.setPixelRatio(pr); }
 window.__res = RES;
+const _shopC = new THREE.Vector3(6, 1.5, -3.5);
+const INMESH = interior && interior.group ? { far: false } : null;
+if (INMESH) { const ls = []; interior.group.traverse(o => { if (o.isLight) ls.push(o); }); // Lichter raus aus der Gruppe, damit Ausblenden keine Shader neu baut
+  ls.forEach(l => { scene.attach(l); if (l.target && l.target.parent && l.target.parent !== scene) scene.attach(l.target); }); }
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.1);
@@ -601,6 +605,7 @@ function frame() {
   if (!tp.active && controls.update()) dirty = true;
   if (RES.can) { if (moving) { RES.idle = 0; if (RES.hi) setRes(false); else if (window.__ready) { RES.ema = RES.ema * 0.92 + dt * 0.08; if (RES.ema > 0.045 && RES.lo > 1) { RES.lo = Math.max(1, RES.lo - 0.25); RES.ema = 0.028; setRes(false); } } } else { RES.idle += dt; if (!RES.hi && RES.idle > 0.4) { setRes(true); dirty = true; } } }
   if (camera.position.y < 0.3) { camera.position.y = 0.3; dirty = true; }
+  if (INMESH) { const d = camera.position.distanceTo(_shopC), far = INMESH.far ? d > 36 : d > 42; if (far !== INMESH.far) { INMESH.far = far; interior.group.visible = !far; dirty = true; } } // Innenraum in der Ferne aus (spart ~300 Draw Calls)
   frameCounter++;
   if (ext.animate && ext.animate(dt)) dirty = true;
   if (!dirty) return;
@@ -652,12 +657,12 @@ const W = {
   toast(msg, ms = 1800) { let t = document.getElementById('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'glass'; document.body.appendChild(t); } t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms); },
 };
 window.__W = W;
-fetch('city/city.json?v=11232147').then(r => r.ok ? r.json() : null).then(cj => { if (cj) { W.city = cj; W.emit('city', cj); } }).catch(() => {});
+fetch('city/city.json?v=11232155').then(r => r.ok ? r.json() : null).then(cj => { if (cj) { W.city = cj; W.emit('city', cj); } }).catch(() => {});
 {
   const q = new URLSearchParams(location.search).get('addons');
   const list = (q ?? 'city,traffic,people,combat').split(',').map(s => s.trim()).filter(Boolean);
   for (const name of list) {
-    try { const m = await import(`./${name}.js?v=11232147`); const inst = m.init ? await m.init(W) : null; if (inst) W.addons[name] = inst; }
+    try { const m = await import(`./${name}.js?v=11232155`); const inst = m.init ? await m.init(W) : null; if (inst) W.addons[name] = inst; }
     catch (e) { console.warn('Erweiterung nicht geladen:', name, e); }
   }
 }
