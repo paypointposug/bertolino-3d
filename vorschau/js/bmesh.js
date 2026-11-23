@@ -5,7 +5,7 @@
 // alles aus dem Luftbild-Mesh auf Straßen/Gehwegen/Höfen (Autos, Bäume, Menschen aus den Luftbildern) wird flach unter unseren Boden gedrückt.
 // Abschalten: ?b=0
 import * as THREE from 'three';
-import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin } from './lib3dtiles.js';
+import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js';
 
 const URL0 = 'https://berlin-wab.virtualcitymap.de/datasource-data/baselayer/mesh_2025/tileset.json';
 const CREDIT = '3D-Mesh Berlin 2025 © Berlin Partner für Wirtschaft und Technologie GmbH';
@@ -23,7 +23,7 @@ export async function init(W) {
   const la = LAT0 * d2r, lo = LON0 * d2r, sla = Math.sin(la), cla = Math.cos(la), slo = Math.sin(lo), clo = Math.cos(lo);
   const Nn = A / Math.sqrt(1 - E2 * sla * sla), Mm = A * (1 - E2) / Math.pow(1 - E2 * sla * sla, 1.5);
   const sE = KX / (d2r * Nn * cla), sN = KY / (d2r * Mm);
-  let H0 = +(Q.get('bh') || 76.2);                       // Ellipsoid-Höhe Gehweg (wird unten nachgemessen)
+  let H0 = +(Q.get('bh') || 36.6);   // dieses Mesh nutzt Höhen über NHN (nicht Ellipsoid) – wird unten nachgemessen                       // Ellipsoid-Höhe Gehweg (wird unten nachgemessen)
   const e = new THREE.Vector3(-slo, clo, 0), n = new THREE.Vector3(-sla * clo, -sla * slo, cla), u = new THREE.Vector3(cla * clo, cla * slo, sla);
   const M = new THREE.Matrix4();
   function buildM() {
@@ -56,9 +56,15 @@ export async function init(W) {
   const tiles = new TilesRenderer(Q.get('burl') || URL0);
   tiles.registerPlugin(new TileCompressionPlugin({ disableMipmaps: false }));   // Mipmaps an: sonst flimmern Fassaden auf Augenhöhe
   tiles.registerPlugin(new UnloadTilesPlugin());
-  tiles.errorTarget = +(Q.get('bet') || (isMobile ? 10 : 6));               // kleiner = schärfer (mehr Daten)
+  // Detail nur im Block: in einer Kugel um den Block bis zu einem festen Fehler verfeinern, außerhalb grob (spart Speicher)
+  tiles.errorTarget = +(Q.get('bet') || (isMobile ? 48 : 32));
+  const region = new SphereRegion({ errorTarget: +(Q.get('ber') || (isMobile ? 1.2 : 0.6)), sphere: new THREE.Sphere(new THREE.Vector3(), +(Q.get('brad') || (isMobile ? 230 : 320))) });
+  const regionPlugin = new LoadRegionPlugin(); tiles.registerPlugin(regionPlugin); regionPlugin.addRegion(region);
+  const REG_C = new THREE.Vector3(+(Q.get('bcx') || 45), 0, +(Q.get('bcz') || -45));   // Mitte Block in Laden-Koordinaten
+  function placeRegion() { region.sphere.center.copy(REG_C).applyMatrix4(new THREE.Matrix4().copy(M).invert()); }               // kleiner = schärfer (mehr Daten)
   tiles.lruCache.minSize = 900; tiles.lruCache.maxSize = isMobile ? 1400 : 2600;
-  tiles.group.matrixAutoUpdate = false; tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true);
+  tiles.lruCache.minBytesSize = (isMobile ? 160 : 450) * 2 ** 20; tiles.lruCache.maxBytesSize = (isMobile ? 240 : 700) * 2 ** 20;
+  tiles.group.matrixAutoUpdate = false; tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true); placeRegion();
   tiles.group.name = 'bmesh';
   scene.add(tiles.group);
   camera.layers.enable(2);
@@ -83,7 +89,7 @@ export async function init(W) {
   // Flachdrücken + Messung der Bodenhöhe
   const orig = new Map();                // geometry -> Original-Positionen (für Neuberechnung nach Höhenkorrektur)
   const live = new Set();                // aktuell geladene Kachel-Szenen
-  const samples = []; let calibrated = Q.has('bh');
+  const samples = [], coarse = []; let calibrated = Q.has('bh'), roughDone = Q.has('bh');
   const _A = new THREE.Matrix4(), _Ai = new THREE.Matrix4(), _p = new THREE.Vector3();
   function process(sceneObj, sample) {
     sceneObj.updateMatrixWorld(true);
@@ -96,12 +102,12 @@ export async function init(W) {
       // Kachel-lokal -> Gruppe(ECEF) -> Laden
       _A.copy(c.matrixWorld); if (sceneObj.parent) _A.premultiply(parentInv); _A.premultiply(M); _Ai.copy(_A).invert();
       c.geometry.boundingSphere || c.geometry.computeBoundingSphere();
-      const fine = c.geometry.boundingSphere.radius < 120;
+      const fine = c.geometry.boundingSphere.radius < 120; const flatOK = c.geometry.boundingSphere.radius < 220;   // grobe Kacheln nicht flachdrücken (sonst riesige schräge Dreiecke)
       const arr = pos.array, isz = pos.itemSize; let changed = false;
       for (let i = 0, k = 0; i < pos.count; i++, k += isz) {
         _p.set(o[k], o[k + 1], o[k + 2]).applyMatrix4(_A);
-        if (sample && fine && _p.x > -40 && _p.x < 90 && _p.z > 9.5 && _p.z < 29 && samples.length < 60000) samples.push(_p.y);
-        if (!NOFLAT && flatAt(_p.x, _p.z)) { _p.y = FLAT_Y; _p.applyMatrix4(_Ai); arr[k] = _p.x; arr[k + 1] = _p.y; arr[k + 2] = _p.z; changed = true; }
+        if (sample && _p.x > -40 && _p.x < 90 && _p.z > 9.5 && _p.z < 29 && _p.y > -150 && _p.y < 150) { if (fine) { if (samples.length < 60000) samples.push(_p.y); } else if (coarse.length < 4000) coarse.push(_p.y); }
+        if (!NOFLAT && flatOK && flatAt(_p.x, _p.z)) { _p.y = FLAT_Y; _p.applyMatrix4(_Ai); arr[k] = _p.x; arr[k + 1] = _p.y; arr[k + 2] = _p.z; changed = true; }
         else if (arr[k] !== o[k] || arr[k + 1] !== o[k + 1] || arr[k + 2] !== o[k + 2]) { arr[k] = o[k]; arr[k + 1] = o[k + 1]; arr[k + 2] = o[k + 2]; changed = true; }
       }
       if (changed) { pos.needsUpdate = true; c.geometry.computeBoundingSphere(); c.geometry.computeBoundingBox?.(); }
@@ -123,11 +129,15 @@ export async function init(W) {
   tiles.addEventListener('needs-update', () => W.requestRender());
 
   function maybeCalibrate() {
-    if (calibrated || samples.length < 4000) return;
-    const s = samples.slice().sort((a, b) => a - b); const ground = s[Math.floor(s.length * 0.12)];
+    if (calibrated) return;
+    let src = null;
+    if (samples.length >= 3000) { src = samples; calibrated = true; }
+    else if (!roughDone && coarse.length >= 25) { src = coarse; roughDone = true; }
+    if (!src) return;
+    const s = src.slice().sort((a, b) => a - b); const ground = s[Math.floor(s.length * 0.15)];
     const dy = ground - (-0.16);
-    calibrated = true;
-    if (Math.abs(dy) > 0.03) { H0 += dy; buildM(); tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true); for (const sc of live) process(sc, false); }
+    if (src === coarse) coarse.length = 0;
+    if (Math.abs(dy) > 0.03) { H0 += dy; buildM(); tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true); placeRegion(); for (const sc of live) process(sc, false); }
     console.info('[bmesh] Boden kalibriert: Ellipsoid-Höhe', H0.toFixed(2), 'Korrektur', dy.toFixed(2), 'm aus', s.length, 'Punkten');
     W.bmesh.H0 = H0;
   }
@@ -155,7 +165,7 @@ export async function init(W) {
   let tAttr = 0, firstModels = 0;
   tiles.addEventListener('load-model', () => { firstModels++; if (firstModels === 6) hideCityHouses(); });
 
-  W.bmesh = { tiles, H0, M, setH: (h) => { H0 = h; buildM(); tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true); for (const sc of live) process(sc, false); W.requestRender(); }, stats: () => ({ loaded: live.size, mats: mats.size, visible: tiles.visibleTiles.size, downloading: tiles.stats?.downloading, parsing: tiles.stats?.parsing, H0 }) };
+  W.bmesh = { tiles, region, H0, M, setH: (h) => { H0 = h; buildM(); tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true); placeRegion(); for (const sc of live) process(sc, false); W.requestRender(); }, stats: () => ({ loaded: live.size, mats: mats.size, visible: tiles.visibleTiles.size, downloading: tiles.stats?.downloading, parsing: tiles.stats?.parsing, H0 }) };
   window.__bmesh = W.bmesh;
 
   return {
