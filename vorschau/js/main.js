@@ -601,7 +601,7 @@ function frame() {
   }
   let moving = !!tween;
   if (play(dt)) { dirty = true; moving = true; }
-  for (const k in W.addons) { const a = W.addons[k]; if (a.update && a.update(dt)) { dirty = true; moving = true; } }
+  for (const k in W.addons) { const a = W.addons[k]; try { if (a.update && a.update(dt)) { dirty = true; moving = true; } } catch (er) { a.__err = (a.__err || 0) + 1; if (a.__err < 4) console.warn('Erweiterung', k, er); if (a.__err > 30) delete W.addons[k]; } }
   if (!tp.active && controls.update()) dirty = true;
   if (RES.can) { if (moving) { RES.idle = 0; if (RES.hi) setRes(false); else if (window.__ready) { RES.ema = RES.ema * 0.92 + dt * 0.08; if (RES.ema > 0.045 && RES.lo > 1) { RES.lo = Math.max(1, RES.lo - 0.25); RES.ema = 0.028; setRes(false); } } } else { RES.idle += dt; if (!RES.hi && RES.idle > 0.4) { setRes(true); dirty = true; } } }
   if (camera.position.y < 0.3) { camera.position.y = 0.3; dirty = true; }
