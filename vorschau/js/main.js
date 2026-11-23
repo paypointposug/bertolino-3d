@@ -659,8 +659,8 @@ const W = {
 window.__W = W;
 fetch('city/city.json?v=11232305').then(r => r.ok ? r.json() : null).then(cj => { if (cj) { W.city = cj; W.emit('city', cj); } }).catch(() => {});
 {
-  const q = new URLSearchParams(location.search).get('addons');
-  const list = (q ?? ('city,' + (new URLSearchParams(location.search).get('b') === '1' ? 'bmesh,' : '') + 'traffic,people,combat,life'))   // Berlin-Mesh nur mit ?b=1 (am Handy unbrauchbar).split(',').map(s => s.trim()).filter(Boolean);
+  const q = new URLSearchParams(location.search).get('addons');   // Berlin-Mesh (bmesh) nur mit ?b=1 – am Handy unbrauchbar
+  const list = (q ?? ('city,' + (new URLSearchParams(location.search).get('b') === '1' ? 'bmesh,' : '') + 'traffic,people,combat,life')).split(',').map(s => s.trim()).filter(Boolean);
   for (const name of list) {
     try { const m = await import(`./${name}.js?v=11232305`); const inst = m.init ? await m.init(W) : null; if (inst) W.addons[name] = inst; }
     catch (e) { console.warn('Erweiterung nicht geladen:', name, e); }
