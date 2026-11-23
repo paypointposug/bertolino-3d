@@ -57,11 +57,26 @@
   @media (max-width:520px) { .title span { display:none; } .title { padding:7px 11px; } .title b { font-size:14px; } }
   @media (orientation:landscape) and (max-height:520px) {
     .ui { flex-direction:row; align-items:flex-end; justify-content:center; gap:8px; }
-    .steps { order:1; } .opts { order:2; max-width:calc(100% - 350px); padding:6px; gap:5px; }
+    .steps { order:1; } .opts { order:2; max-width:calc(100% - 400px); padding:6px; gap:4px; }
+    .chead b { font-size:14px; } .opts button.cx { min-height:30px; width:30px; }
     .opts button { min-height:38px; padding:7px 12px; font-size:14px; }
     .steps button { min-width:56px; padding:6px 6px; }
     .zones { bottom:110px; }
   }
+  .opts.off { display:none; }
+  .opts { flex-direction:column; gap:6px; align-items:stretch; }
+  .chead { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 2px 0 8px; }
+  .chead b { font-size:15px; font-weight:800; letter-spacing:-.01em; }
+  .opts button.cx { min-height:34px; width:34px; padding:0; border-radius:50%; font-size:15px; background:#16181d; color:#fff; flex:none; }
+  .crow { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; }
+  .crow:empty { display:none; }
+  .opts .info { padding:0 6px 2px; }
+  .steps button.hide { min-width:40px; color:var(--mut); }
+  #uishow { display:none; position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:7; font-size:14px; font-weight:800; padding:10px 18px; background:#ffffffee; }
+  .uioff .ui { display:none; } .uioff #uishow { display:block; }
+  #hots { position:fixed; inset:0; pointer-events:none; z-index:3; overflow:hidden; }
+  .hot { position:absolute; left:0; top:0; margin:-21px 0 0 -21px; width:42px; height:42px; padding:0; border-radius:50%; font-size:19px; line-height:1; pointer-events:auto; display:none; background:#ffffffee; border:2px solid #00afef; box-shadow:0 0 0 0 #00afef99, 0 3px 12px #0006; animation:hotp 1.8s ease-out infinite; }
+  @keyframes hotp { 0% { box-shadow:0 0 0 0 #00afef99, 0 3px 12px #0006; } 70% { box-shadow:0 0 0 14px #00afef00, 0 3px 12px #0006; } 100% { box-shadow:0 0 0 0 #00afef00, 0 3px 12px #0006; } }
   .help { position:fixed; inset:0; background:#0009; display:flex; align-items:center; justify-content:center; z-index:50; padding:16px; }
   .help.off { display:none; }
   .hcard { background:#fff; border-radius:22px; padding:20px 20px 16px; width:min(360px, 100%); box-shadow:0 20px 60px #0008; }
@@ -102,13 +117,15 @@
   </div>
 </div>
 <div class="bar" id="views" style="display:none"></div>
+<div id="hots"></div>
+<button id="uishow" aria-label="Leiste aufklappen">☰ Menü</button>
 <div class="ui"><div class="rot" id="rot">📱↻ Handy quer halten – dann sehen Sie alle Fernseher</div><div class="opts" id="opts"></div><div class="steps" id="steps"></div></div>
 <div class="zones" id="zones"><span>🕹️ hier laufen</span><span>hier umschauen 👀</span></div>
 <div class="help" id="help"><div class="hcard">
   <h3>So einfach geht's</h3>
-  <div class="hrow"><span class="hi">1️⃣</span><span><b>Unten antippen</b><br>Außen · Reklame · TV Kasse · TV Theke · Laufen</span></div>
-  <div class="hrow"><span class="hi">2️⃣</span><span><b>Darüber auswählen</b><br>z. B. Logo A, B, C oder 43 · 50 · 55 Zoll</span></div>
-  <div class="hrow"><span class="hi">3️⃣</span><span><b>Oben rechts</b><br>Vorher / Nachher vergleichen</span></div>
+  <div class="hrow"><span class="hi">🕹️</span><span><b>Laufen wie im Spiel</b><br>linker Daumen = laufen · rechter Daumen = umschauen</span></div>
+  <div class="hrow"><span class="hi">👆</span><span><b>Antippen</b><br>Fernseher oder Schild antippen – die Auswahl klappt auf, ✕ klappt sie zu</span></div>
+  <div class="hrow"><span class="hi">⬇️</span><span><b>Unten</b><br>Außen · Reklame · TV Kasse · TV Theke springen direkt hin</span></div>
   <button id="helpOk">Los geht's</button>
 </div></div>
 <div class="tvpanel" id="tvpanel"></div>
