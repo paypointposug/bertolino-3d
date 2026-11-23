@@ -6,7 +6,7 @@
 // Modul bleibt als Vorlage für das offene Berliner 3D-Mesh (gleiche Ausrichtung, Flachdrücken, Fassaden-Ausschnitt).
 import * as THREE from 'three';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { TilesRenderer, GoogleCloudAuthPlugin, GLTFExtensionsPlugin, TileCompressionPlugin, UnloadTilesPlugin } from './lib3dtiles.js';
+import { TilesRenderer, GoogleCloudAuthPlugin, GLTFExtensionsPlugin, TileCompressionPlugin, UnloadTilesPlugin } from './lib3dtiles.js?v=11232246';
 
 const KEY = 'AIzaSyD0ZH9VMA45dPEq1YX8uFcGXJmHB_9-_eA';   // Browser-Schlüssel, nur Map Tiles API, nur diese Website, Tageslimit 100 Sitzungen
 
