@@ -5,7 +5,7 @@
 // alles aus dem Luftbild-Mesh auf Straßen/Gehwegen/Höfen (Autos, Bäume, Menschen aus den Luftbildern) wird flach unter unseren Boden gedrückt.
 // Abschalten: ?b=0
 import * as THREE from 'three';
-import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js?v=11232246';
+import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js?v=11232250';
 
 const URL0 = 'https://berlin-wab.virtualcitymap.de/datasource-data/baselayer/mesh_2025/tileset.json';
 const CREDIT = '3D-Mesh Berlin 2025 © Berlin Partner für Wirtschaft und Technologie GmbH';
@@ -58,12 +58,12 @@ export async function init(W) {
   tiles.registerPlugin(new UnloadTilesPlugin());
   // Detail nur im Block: in einer Kugel um den Block bis zu einem festen Fehler verfeinern, außerhalb grob (spart Speicher)
   tiles.errorTarget = +(Q.get('bet') || (isMobile ? 48 : 32));
-  const region = new SphereRegion({ errorTarget: +(Q.get('ber') || (isMobile ? 1.2 : 0.6)), sphere: new THREE.Sphere(new THREE.Vector3(), +(Q.get('brad') || (isMobile ? 230 : 320))) });
+  const region = new SphereRegion({ errorTarget: +(Q.get('ber') || (isMobile ? 4 : 2.5)), sphere: new THREE.Sphere(new THREE.Vector3(), +(Q.get('brad') || (isMobile ? 170 : 230))) });
   const regionPlugin = new LoadRegionPlugin(); tiles.registerPlugin(regionPlugin); regionPlugin.addRegion(region);
-  const REG_C = new THREE.Vector3(+(Q.get('bcx') || 45), 0, +(Q.get('bcz') || -45));   // Mitte Block in Laden-Koordinaten
+  const REG_C = new THREE.Vector3(+(Q.get('bcx') || 50), 0, +(Q.get('bcz') || -55));   // Mitte Block in Laden-Koordinaten
   function placeRegion() { region.sphere.center.copy(REG_C).applyMatrix4(new THREE.Matrix4().copy(M).invert()); }               // kleiner = schärfer (mehr Daten)
   tiles.lruCache.minSize = 900; tiles.lruCache.maxSize = isMobile ? 1400 : 2600;
-  tiles.lruCache.minBytesSize = (isMobile ? 160 : 450) * 2 ** 20; tiles.lruCache.maxBytesSize = (isMobile ? 240 : 700) * 2 ** 20;
+  tiles.lruCache.minBytesSize = (isMobile ? 260 : 600) * 2 ** 20; tiles.lruCache.maxBytesSize = (isMobile ? 360 : 900) * 2 ** 20;   // Schätzung vor dem Verkleinern -> tatsächlich weniger
   tiles.group.matrixAutoUpdate = false; tiles.group.matrix.copy(M); tiles.group.updateMatrixWorld(true); placeRegion();
   tiles.group.name = 'bmesh';
   scene.add(tiles.group);
@@ -81,7 +81,7 @@ export async function init(W) {
 
   // Materialien: unbeleuchtet (Fotos haben ihr Licht schon), nachts abgedunkelt
   const mats = new Set();
-  const DAY = +(Q.get('bday') || 1.0);
+  const DAY = +(Q.get('bday') || 1.42);   // Luftbild-Texturen sind dunkel (Schatten), etwas aufhellen
   let night = !!W.night;
   const tint = () => { for (const m of mats) { if (night) m.color.setRGB(0.085, 0.095, 0.13); else m.color.setRGB(DAY, DAY * 0.995, DAY * 0.985); } };
   W.ctx?.modeHooks?.push?.((nt) => { night = nt; tint(); });
@@ -114,8 +114,18 @@ export async function init(W) {
       // Material
       const old = c.material; const map = old && old.map;
       if (!c.userData.__gt) {
-        const m = new THREE.MeshBasicMaterial({ map, side: THREE.FrontSide, clippingPlanes: clip, clipIntersection: true });
-        if (map) map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        let tex = map;
+        const img = map && map.image, CAP = +(Q.get('btex') || (isMobile ? 768 : 1024));
+        if (img && img.width && Math.max(img.width, img.height) > CAP) {   // Textur verkleinern: spart Grafikspeicher (Handy!)
+          const f = CAP / Math.max(img.width, img.height), cv = document.createElement('canvas');
+          cv.width = Math.round(img.width * f); cv.height = Math.round(img.height * f);
+          cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+          tex = new THREE.CanvasTexture(cv); tex.flipY = map.flipY; tex.colorSpace = map.colorSpace; tex.wrapS = map.wrapS; tex.wrapT = map.wrapT;
+          tex.offset.copy(map.offset); tex.repeat.copy(map.repeat); tex.channel = map.channel;
+          map.dispose(); if (img.close) try { img.close(); } catch (er) {}
+        }
+        const m = new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide, clippingPlanes: clip, clipIntersection: true });
+        if (tex) tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
         c.material = m; c.userData.__gt = true; mats.add(m); if (old && old !== m) old.dispose?.();
         c.castShadow = false; c.receiveShadow = false;
         if (isMobile) c.layers.set(2);   // am Handy nicht in der nassen Spiegelung (spart die Hälfte)
