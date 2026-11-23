@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="icon" href="data:,">
+<meta name="theme-color" content="#0d1018">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Spätkauf & Bertolino – Laden in 3D</title>
+<style>
+  :root { --ink:#16181d; --mut:#5b6170; --chip:#ffffffe8; --line:#00000014; --acc:#d6262f; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow:hidden; background:#0d1018; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); -webkit-tap-highlight-color: transparent; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  .top { position:fixed; left:12px; top:12px; right:12px; display:flex; gap:10px; align-items:flex-start; justify-content:space-between; pointer-events:none; }
+  .title { pointer-events:auto; background:var(--chip); border-radius:12px; padding:8px 12px; box-shadow:0 2px 12px #0003; max-width:70vw; }
+  .title b { display:block; font-size:15px; letter-spacing:.1px; }
+  .title span { font-size:12px; color:var(--mut); }
+  .toggles { pointer-events:auto; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+  .bar { position:fixed; left:0; right:0; bottom:0; padding:10px 10px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+  .bar::-webkit-scrollbar { display:none; }
+  button { font:inherit; font-size:13px; border:1px solid var(--line); background:var(--chip); color:var(--ink); border-radius:999px; padding:8px 13px; white-space:nowrap; box-shadow:0 2px 10px #0003; cursor:pointer; }
+  button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .hint { position:fixed; left:50%; bottom:64px; transform:translateX(-50%); background:#000a; color:#fff; font-size:12px; padding:6px 10px; border-radius:8px; pointer-events:none; transition:opacity .6s; white-space:nowrap; }
+  #load { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f4f2ee; z-index:10; transition:opacity .5s; }
+  #load .t { font-size:16px; font-weight:600; margin-bottom:12px; }
+  #load .p { width:220px; height:6px; background:#0001; border-radius:4px; overflow:hidden; }
+  #load .p i { display:block; height:100%; width:0; background:var(--acc); transition:width .2s; }
+  .lbl { font-size:11px; line-height:1.25; background:#fffffff0; color:#111; border-radius:6px; padding:3px 6px; box-shadow:0 1px 6px #0004; white-space:nowrap; text-align:center; }
+  .lbl b { font-size:12px; }
+  .tvpanel { position:fixed; right:12px; bottom:62px; background:var(--chip); border-radius:12px; padding:8px 10px; box-shadow:0 2px 12px #0003; display:none; max-width:calc(100vw - 24px); }
+  .joy { position:fixed; left:16px; bottom:70px; width:128px; height:128px; border-radius:50%; background:#ffffff26; border:2px solid #ffffff59; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); touch-action:none; user-select:none; -webkit-user-select:none; z-index:6; }
+  .joyk { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; background:#fff; box-shadow:0 4px 14px #0007; pointer-events:none; transition:transform .12s; }
+  .joy.on .joyk { transition:none; }
+  .joyt { position:absolute; left:0; right:0; bottom:-20px; text-align:center; color:#fff; font-size:12px; text-shadow:0 1px 3px #000; pointer-events:none; }
+  .ud { position:fixed; right:16px; bottom:118px; display:flex; flex-direction:column; gap:10px; z-index:6; }
+  .ud button { width:62px; height:56px; border-radius:16px; font-size:20px; line-height:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; touch-action:none; user-select:none; -webkit-user-select:none; background:#ffffffe0; }
+  .ud button small { font-size:11px; color:var(--mut); }
+  .ud button.on { background:#fff; outline:3px solid var(--acc); }
+  .stick { position:fixed; width:130px; height:130px; margin:-65px 0 0 -65px; border-radius:50%; background:#ffffff22; border:2px solid #ffffff66; pointer-events:none; opacity:0; transition:opacity .15s; z-index:5; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); }
+  .stick.on { opacity:1; }
+  .stickk { position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; border-radius:50%; background:#fff; box-shadow:0 4px 14px #0007; }
+  .zones { position:fixed; left:0; right:0; bottom:190px; opacity:0; display:flex; justify-content:space-between; padding:0 22px; pointer-events:none; z-index:4; transition:opacity .8s; }
+  .zones span { color:#fff; font-size:13px; font-weight:700; background:#0007; padding:7px 12px; border-radius:9999px; }
+  .ui { position:fixed; left:0; right:0; bottom:0; padding:0 8px calc(8px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; z-index:7; }
+  .opts { pointer-events:auto; display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:min(100%, 640px); background:#ffffffee; border-radius:18px; padding:8px; box-shadow:0 4px 20px #0005; }
+  .opts:empty { display:none; }
+  .opts button { font-size:15px; font-weight:700; padding:9px 15px; min-height:42px; box-shadow:none; background:#f1f2f4; border-color:#0000; }
+  .opts button.on { background:var(--ink); color:#fff; }
+  .opts .info { width:100%; text-align:center; font-size:13px; color:var(--mut); padding:2px 4px 0; }
+  .steps { pointer-events:auto; display:flex; gap:4px; background:#ffffffee; border-radius:20px; padding:6px; box-shadow:0 4px 20px #0005; max-width:100%; }
+  .steps button { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:62px; padding:7px 8px; border-radius:14px; box-shadow:none; border:0; background:transparent; font-size:12px; font-weight:700; }
+  .steps button .i { font-size:22px; line-height:1; }
+  .steps button.on { background:var(--ink); color:#fff; }
+  .rot { pointer-events:none; display:none; background:#00afef; color:#fff; font-weight:700; font-size:13px; padding:8px 14px; border-radius:9999px; box-shadow:0 4px 14px #0005; }
+  #tVor, #tNach { font-size:15px; font-weight:800; padding:9px 16px; }
+  @media (max-width:520px) { .title span { display:none; } .title { padding:7px 11px; } .title b { font-size:14px; } }
+  @media (orientation:landscape) and (max-height:520px) {
+    .ui { flex-direction:row; align-items:flex-end; justify-content:center; gap:8px; }
+    .steps { order:1; } .opts { order:2; max-width:calc(100% - 350px); padding:6px; gap:5px; }
+    .opts button { min-height:38px; padding:7px 12px; font-size:14px; }
+    .steps button { min-width:56px; padding:6px 6px; }
+    .zones { bottom:110px; }
+  }
+  .help { position:fixed; inset:0; background:#0009; display:flex; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .help.off { display:none; }
+  .hcard { background:#fff; border-radius:22px; padding:20px 20px 16px; width:min(360px, 100%); box-shadow:0 20px 60px #0008; }
+  .hcard h3 { margin:0 0 12px; font-size:20px; font-weight:900; letter-spacing:-.02em; }
+  .hrow { display:flex; gap:12px; align-items:center; padding:7px 0; border-top:1px solid #0000000f; font-size:15px; line-height:1.3; }
+  .hi { font-size:26px; width:36px; text-align:center; }
+  #helpOk { width:100%; height:50px; margin-top:12px; border-radius:9999px; border:0; background:#00afef; color:#fff; font-size:17px; font-weight:800; }
+  .pad { display:none; }
+  .pad button { position:absolute; width:44px; height:34px; padding:0; font-size:15px; border-radius:10px; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .pad .pu { left:47px; top:0; } .pad .pd { left:47px; top:70px; }
+  .pad .pl2 { left:0; top:35px; } .pad .pr2 { left:94px; top:35px; }
+  .pad .pl { left:0; top:0; font-size:17px; } .pad .pr { left:94px; top:0; font-size:17px; }
+  .tvh { font-size:12px; font-weight:700; margin-bottom:4px; cursor:pointer; }
+  .tvpanel.min .tvrow { display:none; }
+  .tvrow { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:4px 0; }
+  .tvl { font-size:12px; min-width:92px; color:var(--ink); }
+  .tvinfo { width:100%; font-size:11px; color:var(--mut); padding-left:96px; }
+  button.mini { font-size:12px; padding:5px 9px; box-shadow:none; }
+  #tVor, #tNach { font-weight:600; }
+  .note { position:fixed; left:12px; top:110px; max-width:300px; font-size:11px; color:#fff; background:#000a; border-radius:8px; padding:6px 9px; display:none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="load"><div class="t">Laden wird aufgebaut …</div><div class="p"><i id="loadbar"></i></div></div>
+<div class="top">
+  <div class="title"><b>Spätkauf &amp; Bertolino</b><span>Müllerstraße 138 D · Berlin-Wedding</span></div>
+  <div class="toggles">
+    <button id="tVor">Vorher</button>
+    <button id="tNach" class="on">Nachher</button>
+    <button id="tDN">🌙 Nacht</button>
+    <button id="tNight" class="on" style="display:none">Nacht</button>
+    <button id="tDay" style="display:none">Tag</button>
+    <button id="tDim" style="display:none">Maße</button>
+  </div>
+</div>
+<div class="bar" id="views" style="display:none"></div>
+<div class="ui"><div class="rot" id="rot">📱↻ Handy quer halten – dann sehen Sie alle Fernseher</div><div class="opts" id="opts"></div><div class="steps" id="steps"></div></div>
+<div class="zones" id="zones"><span>🕹️ hier laufen</span><span>hier umschauen 👀</span></div>
+<div class="help" id="help"><div class="hcard">
+  <h3>So einfach geht's</h3>
+  <div class="hrow"><span class="hi">1️⃣</span><span><b>Unten antippen</b><br>Außen · Reklame · TV Kasse · TV Theke · Laufen</span></div>
+  <div class="hrow"><span class="hi">2️⃣</span><span><b>Darüber auswählen</b><br>z. B. Logo A, B, C oder 43 · 50 · 55 Zoll</span></div>
+  <div class="hrow"><span class="hi">3️⃣</span><span><b>Oben rechts</b><br>Vorher / Nachher vergleichen</span></div>
+  <button id="helpOk">Los geht's</button>
+</div></div>
+<div class="tvpanel" id="tvpanel"></div>
+<div class="note" id="dimnote">Maße sind aus den Fotos geschätzt (ca.). Vor dem Bestellen vor Ort nachmessen.</div>
+<div class="hint" id="hint">Ziehen = drehen · zwei Finger = zoomen/schieben</div>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>

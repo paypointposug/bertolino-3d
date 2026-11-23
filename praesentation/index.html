@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spätkauf & Bertolino – Ihre neue Ladenfront</title>
+<style>
+  :root { --acc:#00afef; --h:#0f172b; --t:#314158; --t2:#475467; --mut:#62748e; --bg:#fafafa; --line:#e5e5e5; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--t); font-family:ui-sans-serif, system-ui, -apple-system, Arial, sans-serif; -webkit-text-size-adjust:100%; }
+  .wrap { max-width:1080px; margin:0 auto; padding:20px 16px 60px; }
+  header { padding:18px 4px 8px; }
+  .pills { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .pill { background:#f5f7fa; border:1px solid var(--line); border-radius:9999px; padding:7px 14px; font-size:13px; color:var(--mut); }
+  .pill b { color:var(--h); }
+  h1 { color:var(--h); font-weight:900; text-transform:uppercase; letter-spacing:-0.03em; font-size:clamp(30px, 7vw, 54px); line-height:1.02; margin:0 0 10px; }
+  .lead { font-size:17px; color:var(--t2); margin:0; max-width:640px; line-height:1.45; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:24px; box-shadow:0 20px 60px rgba(15,23,43,.07); padding:18px; margin-top:22px; }
+  .card h2 { color:var(--h); font-weight:900; text-transform:uppercase; letter-spacing:-0.025em; font-size:clamp(21px, 4.6vw, 30px); margin:2px 4px 4px; }
+  .card .sub { color:var(--t2); margin:0 4px 14px; font-size:15px; line-height:1.45; }
+  .num { display:inline-flex; width:30px; height:30px; border-radius:50%; background:rgba(0,175,239,.12); color:var(--acc); font-weight:900; align-items:center; justify-content:center; font-size:15px; margin-right:8px; vertical-align:3px; letter-spacing:0; }
+  .img { width:100%; display:block; border-radius:16px; background:#e9ebee; aspect-ratio:1400/860; object-fit:cover; }
+  .seg { display:flex; gap:8px; flex-wrap:wrap; margin:0 4px 12px; }
+  .seg button { appearance:none; border:1px solid var(--line); background:#fff; color:var(--h); border-radius:9999px; height:46px; padding:0 20px; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .seg button.on { background:var(--acc); border-color:var(--acc); color:#fff; }
+  .seg.small button { height:40px; padding:0 16px; font-size:15px; }
+  .cap { margin:12px 4px 0; font-size:15px; color:var(--t); line-height:1.45; }
+  .cap b { color:var(--h); }
+  /* Vorher/Nachher-Regler */
+  .cmp { position:relative; border-radius:16px; overflow:hidden; touch-action:pan-y; user-select:none; -webkit-user-select:none; cursor:ew-resize; aspect-ratio:1400/860; background:#e9ebee; }
+  .cmp img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none; }
+  .cmp .top { clip-path:inset(0 50% 0 0); }
+  .cmp .bar { position:absolute; top:0; bottom:0; left:50%; width:3px; margin-left:-1.5px; background:#fff; box-shadow:0 0 12px rgba(0,0,0,.45); pointer-events:none; }
+  .cmp .knob { position:absolute; top:50%; left:50%; width:48px; height:48px; margin:-24px 0 0 -24px; border-radius:50%; background:#fff; box-shadow:0 4px 18px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; color:var(--acc); font-weight:900; font-size:20px; pointer-events:none; }
+  .tag { position:absolute; top:12px; padding:6px 12px; border-radius:9999px; font-size:13px; font-weight:800; letter-spacing:.04em; background:rgba(255,255,255,.92); color:var(--h); pointer-events:none; }
+  .tag.l { left:12px; } .tag.r { right:12px; background:var(--acc); color:#fff; }
+  .hint { text-align:center; color:var(--mut); font-size:14px; margin:10px 0 2px; }
+  ul.ok { list-style:none; padding:0; margin:14px 4px 0; }
+  ul.ok li { position:relative; padding:6px 0 6px 34px; font-size:15.5px; line-height:1.4; }
+  ul.ok li::before { content:"✓"; position:absolute; left:0; top:5px; width:24px; height:24px; border-radius:50%; background:rgba(0,175,239,.12); color:var(--acc); font-weight:900; font-size:14px; display:flex; align-items:center; justify-content:center; }
+  ul.ok b { color:var(--h); }
+  .two { display:grid; grid-template-columns:1fr; gap:18px; }
+  @media (min-width:860px) { .two { grid-template-columns:1fr 1fr; } .card { padding:24px; } }
+  .tvbox h3 { color:var(--h); font-size:18px; font-weight:900; margin:4px 4px 10px; letter-spacing:-0.01em; }
+  .size { background:#f5fbff; border:1px solid #d4edfb; border-radius:14px; padding:10px 14px; margin:12px 4px 0; font-size:15px; color:var(--t); font-variant-numeric:tabular-nums; }
+  .size b { color:var(--acc); font-size:20px; font-weight:900; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:10px; height:56px; border-radius:9999px; background:var(--acc); color:#fff; text-decoration:none; font-weight:800; font-size:17px; margin:6px 4px 4px; }
+  .note { color:var(--mut); font-size:13.5px; text-align:center; margin:26px 10px 0; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="pills"><span class="pill"><b>Müllerstraße 138 D</b> · Berlin-Wedding</span><span class="pill">Entwurf · <b>November 2026</b></span></div>
+    <h1>Ihre neue Ladenfront</h1>
+    <p class="lead">Spätkauf &amp; Bertolino – so könnten Außenreklame und Fernseher bei Ihnen aussehen. Alles im echten Maßstab nachgebaut.</p>
+  </header>
+
+  <section class="card">
+    <h2><span class="num">1</span>Vorher – Nachher</h2>
+    <p class="sub">Ziehen Sie den Regler nach links und rechts.</p>
+    <div class="seg small" id="dn"><button class="on" data-m="nacht">🌙 Nachts</button><button data-m="tag">☀️ Tagsüber</button></div>
+    <div class="cmp" id="cmp">
+      <img id="cmpB" src="img/nachher_b.jpg" alt="Nachher">
+      <img id="cmpA" class="top" src="img/vorher_nacht.jpg" alt="Vorher">
+      <div class="bar" id="cbar"></div><div class="knob" id="cknob">⇆</div>
+      <span class="tag l">VORHER</span><span class="tag r">NACHHER</span>
+    </div>
+    <ul class="ok">
+      <li><b>„WEINE“</b> fällt weg, der Spätkauf-Schriftzug rückt nach links</li>
+      <li><b>Nightshop Coffee</b>: Ihr Logo rund und weiß leuchtend, Ø ca. 1,50 m</li>
+      <li><b>Bertolino</b>: großer Leuchtkasten mit Logo, Schriftzug unter dem Fenster</li>
+      <li>Der Produktstreifen unter der Blende fällt weg, so wirkt alles ruhiger</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">2</span>Spätkauf-Logo – Ihre Wahl</h2>
+    <p class="sub">Drei Vorschläge. Das Nasenschild links passt sich jeweils an.</p>
+    <div class="seg" id="spk"><button data-k="a">A</button><button class="on" data-k="b">B · Neon</button><button data-k="c">C</button></div>
+    <img class="img" id="spkImg" src="img/nachher_b.jpg" alt="Spätkauf-Logo">
+    <p class="cap" id="spkCap"></p>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">3</span>Bertolino</h2>
+    <p class="sub">Leuchtkasten über dem Fenster, Schriftzug darunter.</p>
+    <img class="img" src="img/nachher_bertolino.jpg" alt="Bertolino Leuchtkasten und Schriftzug">
+    <ul class="ok">
+      <li><b>Leuchtkasten</b> ca. 2,70 × 1,85 m, Logo Ø ca. 1,70 m</li>
+      <li><b>Schriftzug</b> „Pizza &amp; Pasta · Bertolino · Wedding · Berlin“ auf der Platte unter dem Fenster</li>
+      <li>Daneben das <b>Nightshop-Coffee-Logo</b>, weiß leuchtend</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">4</span>Nasenschild</h2>
+    <p class="sub">Das Schild links an der Ecke, von beiden Seiten gut zu sehen.</p>
+    <img class="img" src="img/nachher_links.jpg" alt="Nasenschild links">
+  </section>
+
+  <section class="card">
+    <h2><span class="num">5</span>Fernseher</h2>
+    <p class="sub">Tippen Sie die Größe an. Die Geräte hängen direkt nebeneinander. Hochkant geht auch.</p>
+    <div class="two">
+      <div class="tvbox">
+        <h3>5 Fernseher an der Kasse</h3>
+        <div class="seg small" data-tv="balken"><button data-s="43">43″</button><button class="on" data-s="50">50″</button><button data-s="55">55″</button></div>
+        <img class="img" id="tv-balken" src="img/tv_balken_50.jpg" alt="5 Fernseher am Balken">
+        <div class="size" id="sz-balken"></div>
+      </div>
+      <div class="tvbox">
+        <h3>2 Fernseher über der Bertolino-Theke</h3>
+        <div class="seg small" data-tv="theke"><button data-s="43">43″</button><button class="on" data-s="50">50″</button><button data-s="55">55″</button></div>
+        <img class="img" id="tv-theke" src="img/tv_theke_50.jpg" alt="2 Fernseher über der Theke">
+        <div class="size" id="sz-theke"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="num">6</span>Selbst durch den Laden gehen</h2>
+    <p class="sub">Das ganze Modell in 3D: von außen, im Spätkauf und in der Bertolino-Küche.</p>
+    <a class="btn" href="../">3D-Laden öffnen →</a>
+  </section>
+
+  <p class="note">Alle Maße sind aus Fotos geschätzt und werden vor der Bestellung vor Ort genau gemessen.<br>Entwurf von PayPoint POS · Bildschirm-Inhalte folgen.</p>
+</div>
+
+<script>
+// Bilder vorladen, damit das Umschalten sofort geht
+['nachher_a','nachher_c','vorher_tag','nachher_tag','tv_balken_43','tv_balken_55','tv_theke_43','tv_theke_55'].forEach(n => { const i = new Image(); i.src = 'img/' + n + '.jpg'; });
+
+// Vorher/Nachher-Regler
+const cmp = document.getElementById('cmp'), top_ = document.getElementById('cmpA'), bar = document.getElementById('cbar'), knob = document.getElementById('cknob');
+let dragging = false;
+function setPos(p) { p = Math.max(0, Math.min(100, p)); top_.style.clipPath = `inset(0 ${100 - p}% 0 0)`; bar.style.left = p + '%'; knob.style.left = p + '%'; }
+function fromEvent(e) { const r = cmp.getBoundingClientRect(); return (e.clientX - r.left) / r.width * 100; }
+cmp.addEventListener('pointerdown', e => { dragging = true; cmp.setPointerCapture(e.pointerId); setPos(fromEvent(e)); });
+cmp.addEventListener('pointermove', e => { if (dragging) setPos(fromEvent(e)); });
+['pointerup', 'pointercancel'].forEach(t => cmp.addEventListener(t, () => dragging = false));
+setPos(50);
+
+// Nacht / Tag
+document.querySelectorAll('#dn button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#dn button').forEach(x => x.classList.toggle('on', x === b));
+  const tag = b.dataset.m === 'tag';
+  document.getElementById('cmpA').src = tag ? 'img/vorher_tag.jpg' : 'img/vorher_nacht.jpg';
+  document.getElementById('cmpB').src = tag ? 'img/nachher_tag.jpg' : 'img/nachher_b.jpg';
+});
+
+// Spätkauf-Logo
+const SPK = {
+  a: '<b>A – Nacht modern:</b> weiße Leuchtbuchstaben, roter Mond mit Sternen, darunter „Kiosk · Getränke · Tabak“.',
+  b: '<b>B – Neon im 80er-Stil:</b> geschwungene Schrift in Pink, „Late Night Shop“ und Mond in Türkis. Fällt nachts am meisten auf.',
+  c: '<b>C – Berlin Klassik:</b> gelbes Leuchtband mit schwarzer Schrift und Mond. Tagsüber sehr gut lesbar.'
+};
+function spk(k) {
+  document.querySelectorAll('#spk button').forEach(x => x.classList.toggle('on', x.dataset.k === k));
+  document.getElementById('spkImg').src = 'img/nachher_' + k + '.jpg';
+  document.getElementById('spkCap').innerHTML = SPK[k];
+}
+document.querySelectorAll('#spk button').forEach(b => b.onclick = () => spk(b.dataset.k));
+spk('b');
+
+// Fernseher
+const TV = { 43: [96, 56], 50: [112, 65], 55: [123, 71] };
+const N = { balken: 5, theke: 2 };
+function tv(area, s) {
+  document.querySelectorAll(`[data-tv="${area}"] button`).forEach(x => x.classList.toggle('on', x.dataset.s === String(s)));
+  document.getElementById('tv-' + area).src = `img/tv_${area}_${s}.jpg`;
+  const [w, h] = TV[s]; const n = N[area]; const total = ((n * w + (n - 1) * 4) / 100).toFixed(2).replace('.', ',');
+  document.getElementById('sz-' + area).innerHTML = `<b>${s} Zoll</b> &nbsp;·&nbsp; je Gerät ca. ${w} × ${h} cm &nbsp;·&nbsp; zusammen ca. ${total} m breit`;
+}
+document.querySelectorAll('[data-tv]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => tv(g.dataset.tv, b.dataset.s)));
+tv('balken', 50); tv('theke', 50);
+</script>
+</body>
+</html>
