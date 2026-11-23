@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildExterior } from './exterior.js?v=11232255';
+import { buildExterior } from './exterior.js?v=11232305';
 
 let dirty = true;
 function requestRender() { dirty = true; }
@@ -65,14 +65,14 @@ const loadbar = document.getElementById('loadbar');
 manager.onProgress = (url, a, b) => { loadbar.style.width = Math.round(100 * a / Math.max(b, 1)) + '%'; requestRender(); };
 const texLoader = new THREE.TextureLoader();
 let manifest = {};
-try { manifest = await (await fetch('tex/manifest.json?v=11232255', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
+try { manifest = await (await fetch('tex/manifest.json?v=11232305', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const texCache = new Map();
 function tex(name, opts = {}) {
   if (!manifest[name]) return null;
   const key = name + JSON.stringify(opts);
   if (texCache.has(key)) return texCache.get(key);
-  const t = texLoader.load('tex/' + name + '?v=11232255', () => requestRender());
+  const t = texLoader.load('tex/' + name + '?v=11232305', () => requestRender());
   t.colorSpace = opts.srgb === false ? THREE.NoColorSpace : THREE.SRGBColorSpace;
   t.anisotropy = Math.min(maxAniso, 8);
   if (opts.repeat || opts.wrap) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
@@ -87,11 +87,11 @@ const ctx = { frameId: () => frameCounter, resizeHooks: [], scene, tex, renderer
 const ext = await buildExterior(ctx);
 let interior = null;
 try {
-  const mod = await import('./interior.js?v=11232255');
+  const mod = await import('./interior.js?v=11232305');
   interior = mod.buildInterior(ctx);
 } catch (e) { console.warn('Innenraum nicht geladen', e); }
 let plan = null;
-try { const pm = await import('./plan.js?v=11232255'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
+try { const pm = await import('./plan.js?v=11232305'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
 
 // ---------- views ----------
 const V = {
@@ -378,11 +378,11 @@ const HEAD = 1.6;
 
 // Begehbarkeits-Karte (tex/nav.png: R = Person gesperrt, G = Kamera gesperrt; 0,1 m je Pixel)
 const NAV = { ok: false, X0: -14, Z0: -9, CS: 0.1, W: 0, H: 0, d: null };
-{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11232255'; }
+{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11232305'; }
 // grobe Stadt-Karte (city/nav_city.png, 0,25 m: R = Person/Auto gesperrt, G = Kamera gesperrt, B = Fahrbahn)
 const CNAV = { ok: false, X0: 0, Z0: 0, CS: 0.25, W: 0, H: 0, d: null };
-fetch('city/city.json?v=11232255').then(r => r.ok ? r.json() : null).then(cj => { if (!cj) return; window.__cityJSON = cj; Object.assign(CNAV, { X0: cj.nav.X0, Z0: cj.nav.Z0, CS: cj.nav.CS });
-  const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); CNAV.d = g.getImageData(0, 0, im.width, im.height).data; CNAV.W = im.width; CNAV.H = im.height; CNAV.ok = true; requestRender(); }; im.src = 'city/nav_city.png?v=11232255'; }).catch(() => {});
+fetch('city/city.json?v=11232305').then(r => r.ok ? r.json() : null).then(cj => { if (!cj) return; window.__cityJSON = cj; Object.assign(CNAV, { X0: cj.nav.X0, Z0: cj.nav.Z0, CS: cj.nav.CS });
+  const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); CNAV.d = g.getImageData(0, 0, im.width, im.height).data; CNAV.W = im.width; CNAV.H = im.height; CNAV.ok = true; requestRender(); }; im.src = 'city/nav_city.png?v=11232305'; }).catch(() => {});
 function cnavAt(x, z, ch) {
   if (!CNAV.ok) return ch === 2 ? false : !(z > -0.2 && z < 40 && x > -60 && x < 140);
   const i = Math.floor((x - CNAV.X0) / CNAV.CS), j = Math.floor((z - CNAV.Z0) / CNAV.CS);
@@ -425,7 +425,7 @@ function dress(mesh) { // Kleidung über die Knochen einfärben: Kopf/Hände Hau
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.renderOrder = 2; P.root.add(sh);
 }
 scene.add(P.root);
-Promise.all([new Promise((res, rej) => new GLTFLoader().load('models/person.glb?v=11232255', res, undefined, rej)), fetch('models/anim.json?v=11232255').then(r => r.json())]).then(([g, anim]) => {
+Promise.all([new Promise((res, rej) => new GLTFLoader().load('models/person.glb?v=11232305', res, undefined, rej)), fetch('models/anim.json?v=11232305').then(r => r.json())]).then(([g, anim]) => {
   const m = g.scene; m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; if (o.material.map) { o.material.map.anisotropy = Math.min(maxAniso, 8); o.material.metalness = 0; o.material.roughness = 0.82; o.material.envMapIntensity = 0.7; } else dress(o); } });
   const bb = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.70 / Math.max(0.1, bb.max.y - bb.min.y));
   P.root.add(m); P.mixer = new THREE.AnimationMixer(m);
@@ -657,12 +657,12 @@ const W = {
   toast(msg, ms = 1800) { let t = document.getElementById('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'glass'; document.body.appendChild(t); } t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms); },
 };
 window.__W = W;
-fetch('city/city.json?v=11232255').then(r => r.ok ? r.json() : null).then(cj => { if (cj) { W.city = cj; W.emit('city', cj); } }).catch(() => {});
+fetch('city/city.json?v=11232305').then(r => r.ok ? r.json() : null).then(cj => { if (cj) { W.city = cj; W.emit('city', cj); } }).catch(() => {});
 {
   const q = new URLSearchParams(location.search).get('addons');
-  const list = (q ?? 'city,bmesh,traffic,people,combat,life').split(',').map(s => s.trim()).filter(Boolean);
+  const list = (q ?? ('city,' + (new URLSearchParams(location.search).get('b') === '1' ? 'bmesh,' : '') + 'traffic,people,combat,life'))   // Berlin-Mesh nur mit ?b=1 (am Handy unbrauchbar).split(',').map(s => s.trim()).filter(Boolean);
   for (const name of list) {
-    try { const m = await import(`./${name}.js?v=11232255`); const inst = m.init ? await m.init(W) : null; if (inst) W.addons[name] = inst; }
+    try { const m = await import(`./${name}.js?v=11232305`); const inst = m.init ? await m.init(W) : null; if (inst) W.addons[name] = inst; }
     catch (e) { console.warn('Erweiterung nicht geladen:', name, e); }
   }
 }

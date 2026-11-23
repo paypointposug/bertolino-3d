@@ -16,7 +16,7 @@ export async function init(W) {
   const { scene, camera, renderer, ctx, ext, isMobile } = W;
   const t0 = performance.now();
   const getJSON = (u) => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
-  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232255'), getJSON('city/city_vis.json' + VQ)]);
+  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232305'), getJSON('city/city_vis.json' + VQ)]);
   const root = new THREE.Group(); root.name = 'city'; scene.add(root);
   camera.far = Math.max(camera.far, 1500); camera.updateProjectionMatrix();
   const FAR_LAYER = 2; camera.layers.enable(FAR_LAYER);          // Fernbereich + Kleinkram: nicht in der nassen Spiegelung
