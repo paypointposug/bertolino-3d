@@ -1,0 +1,584 @@
+{
+ "aframe_blue.jpg": {
+  "px": [
+   1024,
+   1536
+  ],
+  "m": [
+   0.6,
+   0.9
+  ],
+  "alpha": false,
+  "note": "Hellblauer Kundenstopper (BERTOLINO / PIZZA & PASTA / STEIN OFEN PIZZA 32Ø nur 6,90€ / Montanara Fritta / Panuozzo Napoletano / WE ACCEPT-Aufkleber) mit Alu-Rahmen; im Foto halb abgeschnitten → komplett nach fenster.jpg neu gezeichnet"
+ },
+ "aframe_white.jpg": {
+  "px": [
+   880,
+   1200
+  ],
+  "m": [
+   0.55,
+   0.75
+  ],
+  "alpha": false,
+  "note": "Holz-Kundenstopper mit heller Tafel: BERTOLINO / BUON APPETITO + schlichte Pizza-/Pasta-Liste mit Preisen in weißem Kreidemarker; im Foto kaum lesbar (nur „…LINO / …ETITO“) → neu gezeichnet, Preise aus den übrigen Tafeln abgeleitet (Pizza 6,90 + Belag 2 €)"
+ },
+ "board_ciao_black.jpg": {
+  "px": [
+   714,
+   1600
+  ],
+  "m": [
+   0.58,
+   1.3
+  ],
+  "alpha": false,
+  "note": "Kreidetafel mit Holzrahmen (23.–25.10 BERTOLINO SAGT CIAO …): oberer Teil aus fenster.jpg entzerrt; ab PIZZA (vom Stehtisch verdeckt) neu gezeichnet: PIZZA/STEINOFEN/Ø32cm 6,90€/pro Person max. 2 Stk./BUON APPETIT/GUTEN HUNGER/23.10 bis 25.10 – Mittelteil sinngemäß ergänzt"
+ },
+ "board_hallo_white.jpg": {
+  "px": [
+   998,
+   2048
+  ],
+  "m": [
+   0.95,
+   1.95
+  ],
+  "alpha": false,
+  "note": "Großes Whiteboard rechts (BERTOLINO'S / HALLO Wedding / HEUTE SPECIAL / Neapoletaniche Pizza!!! 6,90 / und Montanara Pizza Fritta 5,00€ / Panuozzo Napoletano / Die Besten im Berlin) aus fenster.jpg entzerrt; Stehtisch, A-Ständer und Lampe wegretuschiert, fehlende Buchstaben (Pa, N, o, Die, n) nachgezeichnet, überstrahltes BERTOLINO'S neu in weißem Lackmarker"
+ },
+ "board_pasta_white.jpg": {
+  "px": [
+   794,
+   1024
+  ],
+  "m": [
+   0.62,
+   0.8
+  ],
+  "alpha": false,
+  "note": "Whiteboard oben am Pfeiler (BERTOLINO / PASTA BOWL TO GO / PENNE -NAPOLI -ARABIATA 6,90€), aus fenster.jpg entzerrt, Ausleuchtung ausgeglichen, Schrauben retuschiert, schmaler schwarzer Rahmen"
+ },
+ "crate_augustiner.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Augustiner (blau), Seitenfläche aus innen.jpg entzerrt"
+ },
+ "crate_becks.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Beck's (grün), schmale Seite aus innen.jpg entzerrt (gestreckt, Quelle sehr klein)"
+ },
+ "crate_berliner.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Berliner Kindl (weiß), Seitenfläche aus innen.jpg entzerrt"
+ },
+ "crate_clubmate.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Club-Mate (gelb), frontal aus innen.jpg"
+ },
+ "crate_peroni.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Peroni Nastro Azzurro (dunkelblau mit weißem Schild), aus innen.jpg entzerrt"
+ },
+ "crate_rothaus.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Rothaus (rot), aus innen.jpg entzerrt"
+ },
+ "crate_sternburg.jpg": {
+  "px": [
+   512,
+   384
+  ],
+  "m": [
+   0.4,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Getränkekasten Sternburg (rot), Seitenfläche aus innen.jpg entzerrt"
+ },
+ "curtain.jpg": {
+  "px": [
+   512,
+   1024
+  ],
+  "m": [
+   0.5,
+   1.0
+  ],
+  "alpha": false,
+  "note": "Gardine (helle Store, vertikale Falten) hinter den Altbaufenstern; Faltenprofil aus den Gardinen der OG-Fenster in fassade.jpg, auf Tageslicht-Weiß gesetzt; horizontal annähernd kachelbar"
+ },
+ "d1_neon.png": {
+  "px": [
+   760,
+   560
+  ],
+  "m": [
+   0.38,
+   0.28
+  ],
+  "alpha": true,
+  "note": "Blaues Neon-Wolkenlogo in Tür D1 (dunkelblaue Acryl-Wolke, hellblauer Rand, Schrift „Only Crums“), neu gezeichnet"
+ },
+ "d2_posters.png": {
+  "px": [
+   600,
+   1024
+  ],
+  "m": [
+   0.85,
+   1.45
+  ],
+  "alpha": true,
+  "note": "Plakate/Aufkleber am rechten Flügel von D2 (Gauloises, Kartenzahlung, Freiluftkino Rehberge, Coffee to go, Aufkleber); aus fassade.jpg, Glas transparent; Oberkante = Glas-Oberkante"
+ },
+ "facade_plaster.jpg": {
+  "px": [
+   1024,
+   1024
+  ],
+  "m": [
+   2.0,
+   2.0
+  ],
+  "alpha": false,
+  "note": "Altbauputz hell-beige (Tageslicht), nahtlos; Fleckung aus fassade.jpg (Putzfläche zwischen den OG-Fenstern), Korn/Poren prozedural periodisch"
+ },
+ "int_bulkhead.jpg": {
+  "px": [
+   2048,
+   316
+  ],
+  "m": [
+   7.45,
+   1.15
+  ],
+  "alpha": false,
+  "note": "Graues Unterzug-Band (#8e9194) mit Kreide „KARTE o. BAR / Cash or Card / KASSE ↓“ und „Coffe Bar ↓“ (rechte Hälfte) aus innen.jpg; Kreide extrahiert und auf sauberen Grund gesetzt, Kabel/Kameras/Deckenkante entfernt; Schrift unverzerrt (Seitenverhältnis wie Foto)"
+ },
+ "int_cigs.jpg": {
+  "px": [
+   1024,
+   683
+  ],
+  "m": [
+   1.2,
+   0.8
+  ],
+  "alpha": false,
+  "note": "Zigaretten-/Tabakregal hinter der Kasse (4 Fächer mit Tabak, Liquids, Zigarettenschachteln) aus innen.jpg entzerrt; Kassenaufsteller vorn per Klonen entfernt; Quelle klein (~170 px breit) → weich"
+ },
+ "int_fridge_door.jpg": {
+  "px": [
+   512,
+   1463
+  ],
+  "m": [
+   0.7,
+   2.0
+  ],
+  "alpha": false,
+  "note": "Glastür-Kühlschranktür mit Getränken: unverdeckte linke Tür der Rückwand aus innen.jpg (x 741–821), eine Regalreihe gespiegelt ergänzt für 0,70×2,0 m; dunkler Alu-Rahmen + Griffleiste ergänzt; Quelle nur ~80 px breit → weich"
+ },
+ "int_fridge_door2.jpg": {
+  "px": [
+   512,
+   1463
+  ],
+  "m": [
+   0.7,
+   2.0
+  ],
+  "alpha": false,
+  "note": "Variante: Kühlschranktür aus unverdeckten Regalreihen mehrerer Türen der Rückwand (innen.jpg, rechte Gruppe + linke Tür) kombiniert"
+ },
+ "int_haribo.png": {
+  "px": [
+   384,
+   1755
+  ],
+  "m": [
+   0.35,
+   1.6
+  ],
+  "alpha": true,
+  "note": "Haribo-Ständer (blaue Seitenwand mit HARIBO-Logo und Goldbär) aus innen.jpg; vom Samtsessel verdeckter unterer rechter Teil mit Panelblau ergänzt, verdeckte Bärhälfte gespiegelt ergänzt; Haken/Tüten und Hintergrund transparent"
+ },
+ "int_langnese.jpg": {
+  "px": [
+   1024,
+   472
+  ],
+  "m": [
+   1.3,
+   0.6
+  ],
+  "alpha": false,
+  "note": "Front der Langnese-Eistruhe (Deckelkante, rote Front mit Herz-Logo + LANGNESE, Milch-Spritzer mit Erdbeere, Sockel) aus innen.jpg; Marmortisch/Sessel entfernt, verdeckter Teil von LANGNESE, Milchspritzer und rechte Truhenhälfte ergänzt"
+ },
+ "int_meray.png": {
+  "px": [
+   440,
+   1980
+  ],
+  "m": [
+   0.4,
+   1.8
+  ],
+  "alpha": true,
+  "note": "Rotes meray-Nuss-Display (Frontpanel: meray Nuts / Premium / since 1978 / handful of love / Hände mit Nüssen / www.meray.eu) aus innen.jpg entzerrt; abgerundetes Panel, außen transparent"
+ },
+ "int_shelf_snacks.jpg": {
+  "px": [
+   768,
+   1152
+  ],
+  "m": [
+   1.2,
+   1.8
+  ],
+  "alpha": false,
+  "note": "Snack-/Süßwarenregal (Lochblech-Rückwand, 5 Fächer mit Preisschienen): Produktreihen (Nusstüten, Lutscher-Turm, Chips) aus innen.jpg rechts entnommen und gekachelt – Regalgestell neu aufgebaut, da das Original-Regal im Foto stark schräg/verdeckt ist"
+ },
+ "kitchen_menu_wall.jpg": {
+  "px": [
+   1024,
+   1024
+  ],
+  "m": [
+   1.6,
+   1.6
+  ],
+  "alpha": false,
+  "note": "Graue Küchenwand mit Kreide-Menü: BERTOLINO / STEINOFEN / PIZZA mini STK. 3,90€ / Ø32cm 6,90€ / + BELAG je 2€ … ORDER; sichtbare Kreide aus kueche.jpg extrahiert, links abgeschnittene Wortanfänge (BE-, STEIN-, PIZZ-) und vom Landi-Bildschirm verdeckte Zeilen (+ BELAG je 2€, PASTA BOWL TO GO 6,90€, LASAGNE 8,90€, ORDER →) neu geschrieben – verdeckte Zeilen sinngemäß"
+ },
+ "landi_screen.jpg": {
+  "px": [
+   1280,
+   800
+  ],
+  "m": [
+   0.34,
+   0.21
+  ],
+  "alpha": false,
+  "note": "Bildschirminhalt Landi-Kasse (PayPoint-Bestellansicht links mit blauem/rotem Knopf, Lieferkarte rechts) aus kueche.jpg entzerrt; Blendung/Farbstich entfernt, Panel-Grund und Knöpfe sauber nachgezogen, Karte geglättet; Kleintext im Foto unlesbar (Quelle ~260 px breit) → bleibt unscharf. m = Pixelmaß 16:10, auf Displaygröße skalieren"
+ },
+ "logo_nightshop.png": {
+  "px": [
+   1400,
+   1400
+  ],
+  "m": [
+   1.0,
+   1.0
+  ],
+  "alpha": true,
+  "note": "Logo „Nightshop Coffee Wedding – Spätkauf Kiosk Tabakladen“ aus logo.jpg (Ellipse→Kreis entzerrt), schwarze Linien, Hintergrund transparent; m = Beispielgröße, beliebig skalierbar (rund, 1:1)"
+ },
+ "logo_nightshop_white.png": {
+  "px": [
+   1400,
+   1400
+  ],
+  "m": [
+   1.0,
+   1.0
+  ],
+  "alpha": true,
+  "note": "wie logo_nightshop.png, Linien weiß"
+ },
+ "nasenschild.png": {
+  "px": [
+   1088,
+   1600
+  ],
+  "m": [
+   0.85,
+   1.25
+  ],
+  "alpha": false,
+  "note": "Nasenschild links: magenta Leuchtkasten, gelb SPÄT / KAUF mit weißer Kontur, weiß LATE NIGHT SHOP; sauber neu gezeichnet nach fassade.jpg (beidseitig verwendbar)"
+ },
+ "open_neon.png": {
+  "px": [
+   1024,
+   450
+  ],
+  "m": [
+   0.5,
+   0.22
+  ],
+  "alpha": true,
+  "note": "OPEN-Neon (rot, blauer Rahmen), neu gezeichnet; außerhalb der Röhren transparent (nur schwacher Halo)"
+ },
+ "panel_bertolino.jpg": {
+  "px": [
+   2048,
+   614
+  ],
+  "m": [
+   3.0,
+   0.9
+  ],
+  "alpha": false,
+  "note": "Dunkle Brüstungsplatte unter dem Bertolino-Fenster: Kreideschrift (BERTOLINO / OPEN / ↑ HIER KÖNNEN SIE BESTELLEN ↑ / Bitte drinne Bezahlen!) aus fenster.jpg extrahiert und auf sauberen Plattengrund gesetzt; rechtes Drittel (Stehtisch) ergänzt: „Cash or Card“ und „APERTO“ (im Foto nur Ansatz „C…“/„AP…“ sichtbar)"
+ },
+ "pier_stickers.jpg": {
+  "px": [
+   256,
+   1920
+  ],
+  "m": [
+   0.3,
+   2.25
+  ],
+  "alpha": false,
+  "note": "Linker Pfeiler voller Aufkleber, aus fassade.jpg entzerrt und aufgehellt (Quelle nur ~35 px breit → weich)"
+ },
+ "pizza_1.png": {
+  "px": [
+   512,
+   512
+  ],
+  "m": [
+   0.32,
+   0.32
+  ],
+  "alpha": true,
+  "note": "Pizza von oben (Ø32 cm), margherita; Steinofen-Optik mit Leopardenrand – nachgebaut (Fotos zeigen die Pizzen nur sehr flach/unscharf), Farben nach fenster.jpg"
+ },
+ "pizza_2.png": {
+  "px": [
+   512,
+   512
+  ],
+  "m": [
+   0.32,
+   0.32
+  ],
+  "alpha": true,
+  "note": "Pizza von oben (Ø32 cm), salami; Steinofen-Optik mit Leopardenrand – nachgebaut (Fotos zeigen die Pizzen nur sehr flach/unscharf), Farben nach fenster.jpg"
+ },
+ "pizza_3.png": {
+  "px": [
+   512,
+   512
+  ],
+  "m": [
+   0.32,
+   0.32
+  ],
+  "alpha": true,
+  "note": "Pizza von oben (Ø32 cm), funghi; Steinofen-Optik mit Leopardenrand – nachgebaut (Fotos zeigen die Pizzen nur sehr flach/unscharf), Farben nach fenster.jpg"
+ },
+ "pizza_4.png": {
+  "px": [
+   512,
+   512
+  ],
+  "m": [
+   0.32,
+   0.32
+  ],
+  "alpha": true,
+  "note": "Pizza von oben (Ø32 cm), tonno; Steinofen-Optik mit Leopardenrand – nachgebaut (Fotos zeigen die Pizzen nur sehr flach/unscharf), Farben nach fenster.jpg"
+ },
+ "sidewalk_mosaic.jpg": {
+  "px": [
+   1024,
+   1024
+  ],
+  "m": [
+   1.0,
+   1.0
+  ],
+  "alpha": false,
+  "note": "Berliner Klein-/Mosaikpflaster (Reihen à ~8 cm, Granit grau/beige, Sandfugen), nahtlos; Steine prozedural, Körnung und Farbpalette nach fenster.jpg/fassade.jpg (Foto-Pflaster zu flach/verdeckt zum Entzerren)"
+ },
+ "sidewalk_slab.jpg": {
+  "px": [
+   1024,
+   1024
+  ],
+  "m": [
+   2.0,
+   2.0
+  ],
+  "alpha": false,
+  "note": "Gehwegplatten 50×50 cm (4×4), Waschbeton-Körnung aus fenster.jpg entzerrt, Nachtschatten ausgeglichen, auf Tageslicht-Grau gesetzt; nahtlos kachelbar (Fugen an den Kanten)"
+ },
+ "sign_only_card.png": {
+  "px": [
+   900,
+   600
+  ],
+  "m": [
+   0.45,
+   0.3
+  ],
+  "alpha": true,
+  "note": "Schwarzes Kreideschild „↖ ONLY CARD PAYMIANT“ (Kreide aus kueche.jpg extrahiert, sauberer Tafelgrund) + davor weißes Schild „KARTENZAHLUNG HIER“ (im Foto von Flaschen/Gemüse verdeckt → neu geschrieben); außen transparent"
+ },
+ "strip_products.jpg": {
+  "px": [
+   2048,
+   91
+  ],
+  "m": [
+   8.09,
+   0.36
+  ],
+  "alpha": false,
+  "note": "Produktbild-Streifen unter der Blende (TELECAFÉ links), aus fassade.jpg entzerrt, aufgehellt, Glanzlichter ausgeglichen"
+ },
+ "tile_white.jpg": {
+  "px": [
+   1020,
+   1020
+  ],
+  "m": [
+   1.0,
+   1.0
+  ],
+  "alpha": false,
+  "note": "Weiße Wandfliesen Küche, nahtlos: 3×5 Fliesen à 33×20 cm QUER in Kreuzfuge, graue Fugen. Laut kueche.jpg (Wand neben Haube/Fenster, Steckdose als Maßstab) sind die Fliesen ca. 30×20 cm quer – für hochkant die Textur um 90° drehen"
+ },
+ "tv_pizza.jpg": {
+  "px": [
+   1920,
+   1080
+  ],
+  "m": [
+   1.3,
+   0.73
+  ],
+  "alpha": false,
+  "note": "Bildschirminhalt großer TV in W2 (1920×1080): schwarzer 16:9-Rand, mittig Hochkant-Foto Salami-Pizza von oben auf dunklem Granit (Layout wie fassade.jpg). Pizza = pizza_2.png (nachgebaut, da die Foto-Pizzen zu flach/unscharf sind). m = TV-Bildfläche laut SPEC (x 2.0–3.3, y 1.15–1.9)"
+ },
+ "w1_pasta.png": {
+  "px": [
+   1024,
+   2048
+  ],
+  "m": [
+   1.0,
+   2.0
+  ],
+  "alpha": true,
+  "note": "Fenster W1: Milchglas-Folie (Alpha ~0.5) mit weißer Marker-Schrift, nach fassade.jpg neu gezeichnet (unten von Stühlen verdeckt)"
+ },
+ "w2_sign.png": {
+  "px": [
+   1600,
+   384
+  ],
+  "m": [
+   1.25,
+   0.3
+  ],
+  "alpha": false,
+  "note": "Kreideschild oben in W2 (TASTE IT / WOCHEND ANGEBOT / STEINOFEN PIZZA 32Ø 6,90 / MINI 3,– / BERTOLINO), nach fassade.jpg neu gezeichnet; Tafel deckend (PNG ohne Transparenz – Tafel ist vollflächig)"
+ },
+ "w3_list.png": {
+  "px": [
+   576,
+   1596
+  ],
+  "m": [
+   0.65,
+   1.8
+  ],
+  "alpha": true,
+  "note": "Schmales Milchglasfenster W3 mit Liste (PIZZA/FUNGHI/HAWAII/SALAMI/TONNO innen, LASAGNE 8,90€ außen); nach fassade.jpg neu gezeichnet – obere Wörter im Foto unscharf, sinngemäß ergänzt"
+ },
+ "plan_box_bertolino.jpg": {
+  "note": "Nachher-Planung"
+ },
+ "plan_nightshop_sign.jpg": {
+  "note": "Nachher-Planung"
+ },
+ "plan_spk_a.png": {
+  "note": "Vorschlag Spätkauf-Logo"
+ },
+ "plan_spk_a_glow.png": {
+  "note": "Glow"
+ },
+ "plan_spk_b.png": {
+  "note": "Vorschlag Spätkauf-Logo"
+ },
+ "plan_spk_b_glow.png": {
+  "note": "Glow"
+ },
+ "plan_spk_c.png": {
+  "note": "Vorschlag Spätkauf-Logo"
+ },
+ "plan_spk_c_glow.png": {
+  "note": "Glow"
+ },
+ "plan_ns_a.jpg": {
+  "note": "Nasenschild Nachher"
+ },
+ "plan_ns_b.jpg": {
+  "note": "Nasenschild Nachher"
+ },
+ "plan_ns_c.jpg": {
+  "note": "Nasenschild Nachher"
+ },
+ "plan_panel_bertolino.jpg": {
+  "note": "Brüstung Bertolino Nachher (Schriftzug)"
+ },
+ "plan_lb_rechts.jpg": {
+  "note": "Leuchtkasten rechts neben Bertolino-Fenster (Nachher, Beispiel-Inhalt)"
+ },
+ "plan_lb_pfeiler.jpg": {
+  "note": "Leuchtkasten am Pfeiler (Nachher, Beispiel-Inhalt)"
+ }
+}
