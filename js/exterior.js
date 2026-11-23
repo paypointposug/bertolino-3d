@@ -657,7 +657,7 @@ export async function buildExterior(ctx) {
 
   // ================================================================ NACHHER: neue Blende (Plan Kunde 23.11.2026)
   // WEINE weg · SPÄTKAUF nach links · rechts daneben rundes Nightshop-Coffee-Logo (weiß leuchtend auf Schwarz) · Leuchtkasten mit Bertolino-Logo C2
-  const NEU = { spk0: 0.62, spk1: 6.57, logoCx: 8.14, logoCy: 4.22, logoR: 0.75, boxCx: 10.65, boxCy: 4.05 };
+  const NEU = { spk0: 0.62, spk1: 6.57, logoCx: 7.85, logoCy: 4.22, logoR: 0.75, boxCx: 10.65, boxCy: 4.05 };
   {
     // Spätkauf-Logo: 'alt' = bisheriger roter Neon-Schriftzug, a/b/c = neue Vorschläge (Kunde wählt)
     const spk = { alt: new THREE.Group(), a: new THREE.Group(), b: new THREE.Group(), c: new THREE.Group() };
@@ -767,7 +767,7 @@ export async function buildExterior(ctx) {
       c.globalCompositeOperation = 'multiply'; const gv = c.createLinearGradient(0, 0, 0, h); gv.addColorStop(0, '#ffffff'); gv.addColorStop(0.45, '#7a7a7a'); gv.addColorStop(1, '#262626'); c.fillStyle = gv; c.fillRect(0, 0, w, h);
     });
     const glowT = mkGlowT([[0.0, 2.4, '255,200,205', 0.35], [1.8, 9.0, '255,36,24', 1.0], [8.6, 12.4, '205,220,255', 0.75]]);
-    const tail = [[7.2, 9.1, '235,240,255', 0.45], [9.3, 12.0, '255,230,140', 0.45]];
+    const tail = [[6.9, 8.8, '235,240,255', 0.45], [9.3, 12.0, '255,230,140', 0.45]];
     const glowNeu = {
       alt: mkGlowT([[0.2, 7.0, '255,36,24', 1.0], ...tail]),
       a: mkGlowT([[0.2, 7.0, '255,250,245', 0.7], [0.3, 1.9, '255,40,40', 0.6], ...tail]),
