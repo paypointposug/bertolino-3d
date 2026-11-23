@@ -9,14 +9,14 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildExterior } from './exterior.js?v=11230456';
+import { buildExterior } from './exterior.js?v=11230525';
 
 let dirty = true;
 function requestRender() { dirty = true; }
 const canvas = document.getElementById('c');
 const isMobile = matchMedia('(pointer:coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NeutralToneMapping;
@@ -65,16 +65,16 @@ const loadbar = document.getElementById('loadbar');
 manager.onProgress = (url, a, b) => { loadbar.style.width = Math.round(100 * a / Math.max(b, 1)) + '%'; requestRender(); };
 const texLoader = new THREE.TextureLoader();
 let manifest = {};
-try { manifest = await (await fetch('tex/manifest.json?v=11230456', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
+try { manifest = await (await fetch('tex/manifest.json?v=11230525', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const texCache = new Map();
 function tex(name, opts = {}) {
   if (!manifest[name]) return null;
   const key = name + JSON.stringify(opts);
   if (texCache.has(key)) return texCache.get(key);
-  const t = texLoader.load('tex/' + name + '?v=11230456', () => requestRender());
+  const t = texLoader.load('tex/' + name + '?v=11230525', () => requestRender());
   t.colorSpace = opts.srgb === false ? THREE.NoColorSpace : THREE.SRGBColorSpace;
-  t.anisotropy = Math.min(maxAniso, isMobile ? 4 : 8);
+  t.anisotropy = Math.min(maxAniso, 8);
   if (opts.repeat || opts.wrap) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
   if (opts.repeat) t.repeat.set(opts.repeat[0], opts.repeat[1]);
   texCache.set(key, t);
@@ -87,11 +87,11 @@ const ctx = { frameId: () => frameCounter, resizeHooks: [], scene, tex, renderer
 const ext = await buildExterior(ctx);
 let interior = null;
 try {
-  const mod = await import('./interior.js?v=11230456');
+  const mod = await import('./interior.js?v=11230525');
   interior = mod.buildInterior(ctx);
 } catch (e) { console.warn('Innenraum nicht geladen', e); }
 let plan = null;
-try { const pm = await import('./plan.js?v=11230456'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
+try { const pm = await import('./plan.js?v=11230525'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
 
 // ---------- views ----------
 const V = {
@@ -151,8 +151,10 @@ tourBtn.onclick = () => {
 };
 
 // ---------- day / night ----------
+// Kantenglättung nur am Computer (am Handy sorgt die höhere Pixeldichte dafür); abschaltbar mit ?msaa=0
+const MSAA = (() => { const q = new URLSearchParams(location.search).get('msaa'); return q !== null ? Math.max(0, Math.min(8, +q || 0)) : (isMobile ? 0 : 4); })();
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.9, 0.5, 0.85);
-const composer = new EffectComposer(renderer);
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: MSAA }));
 composer.setPixelRatio(renderer.getPixelRatio());
 composer.setSize(innerWidth, innerHeight);
 composer.addPass(new RenderPass(scene, camera));
@@ -370,7 +372,7 @@ const HEAD = 1.6;
 
 // Begehbarkeits-Karte (tex/nav.png: R = Person gesperrt, G = Kamera gesperrt; 0,1 m je Pixel)
 const NAV = { ok: false, X0: -14, Z0: -9, CS: 0.1, W: 0, H: 0, d: null };
-{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11230456'; }
+{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11230525'; }
 function navAt(x, z, ch) {
   if (!NAV.ok) return ch === 0 ? !(z > 0.3 && z < 11 && x > -9 && x < 22) : false;
   const i = Math.floor((x - NAV.X0) / NAV.CS), j = Math.floor((z - NAV.Z0) / NAV.CS);
@@ -403,13 +405,13 @@ function dress(mesh) { // Kleidung über die Knochen einfärben: Kopf/Hände Hau
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.renderOrder = 2; P.root.add(sh);
 }
 scene.add(P.root);
-new GLTFLoader().load('models/person.glb', (g) => {
-  const m = g.scene; m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; dress(o); } });
-  const bb = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.76 / Math.max(0.1, bb.max.y - bb.min.y));
+Promise.all([new Promise((res, rej) => new GLTFLoader().load('models/person.glb?v=11230525', res, undefined, rej)), fetch('models/anim.json?v=11230525').then(r => r.json())]).then(([g, anim]) => {
+  const m = g.scene; m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; if (o.material.map) { o.material.map.anisotropy = Math.min(maxAniso, 8); o.material.metalness = 0; o.material.roughness = 0.82; o.material.envMapIntensity = 0.7; } else dress(o); } });
+  const bb = new THREE.Box3().setFromObject(m); m.scale.setScalar(1.70 / Math.max(0.1, bb.max.y - bb.min.y));
   P.root.add(m); P.mixer = new THREE.AnimationMixer(m);
-  for (const n of ['idle', 'walk', 'run']) { const clip = THREE.AnimationClip.findByName(g.animations, n); if (!clip) continue; const a = P.mixer.clipAction(clip); a.play(); a.setEffectiveWeight(n === 'idle' ? 1 : 0); P.act[n] = a; }
+  for (const n of ['idle', 'walk', 'run']) { if (!anim[n]) continue; const clip = THREE.AnimationClip.parse(anim[n]); clip.uuid = THREE.MathUtils.generateUUID(); const a = P.mixer.clipAction(clip); a.play(); a.setEffectiveWeight(n === 'idle' ? 1 : 0); P.act[n] = a; }
   P.mixer.update(0.3); P.ready = true; P.settle = 0.5; requestRender();
-});
+}).catch(e => console.warn('Figur nicht geladen', e));
 function placePlayer(x, z, face) { const [nx, nz] = nearestFree(x, z); P.x = nx; P.z = nz; if (face !== undefined) P.face = face; P.speed = 0; P.root.position.set(P.x, 0, P.z); P.root.rotation.y = P.face; P.settle = 0.4; }
 // wo die Figur steht, wenn eine feste Ansicht gewählt wird (als Größenvergleich im Bild)
 const SPOT = { front: [5.6, 3.3], links: [5.6, 3.3], rechts: [5.6, 3.3], haus: [5.6, 3.3], reklame: [6.4, 3.6], bertolino: [12.9, 3.4], innen: [4.9, -1.9], tvBalken: [5.2, -2.3], tvTheke: [6.3, -1.2], kueche: [7.0, -1.6] };
@@ -506,8 +508,11 @@ function play(dt) {
   for (let s = 0.2; s <= t + 0.001; s += 0.1) { const x = P.x + dxn * s, z = P.z + dzn * s; if (!camFree(x, z) || HEAD + se * s > ceilAt(x, z) || (P.z < -0.55 && z > -0.5)) { t = Math.max(0.3, s - 0.22); break; } }
   tp.t += (t - tp.t) * Math.min(1, dt * (t < tp.t ? 18 : 5));
   _want.set(P.x + dxn * tp.t, HEAD + se * tp.t, P.z + dzn * tp.t);
+  // ist die Kamera nah dran (enger Laden), über die rechte Schulter schauen, damit der Kopf nicht das Bild verdeckt
+  const sh = THREE.MathUtils.clamp(1.9 - tp.t, 0, 1) * 0.42, shx = Math.cos(tp.yaw) * sh, shz = Math.sin(tp.yaw) * sh;
+  if (sh > 0.01 && camFree(_want.x + shx, _want.z + shz)) { _want.x += shx; _want.z += shz; }
   if (tp.snap) { camera.position.copy(_want); tp.snap = false; } else camera.position.lerp(_want, Math.min(1, dt * 16));
-  _look.set(P.x, HEAD + 0.22 - Math.min(0.2, Math.max(0, 1.4 - tp.t) * 0.3), P.z); camera.lookAt(_look); controls.target.copy(_look);
+  _look.set(P.x + shx * 0.75, HEAD + 0.22 - Math.min(0.2, Math.max(0, 1.4 - tp.t) * 0.3), P.z + shz * 0.75); camera.lookAt(_look); controls.target.copy(_look);
   const wantFov = camera.aspect < 1 ? 78 : 60; if (Math.abs(camera.fov - wantFov) > 0.05) { camera.fov += (wantFov - camera.fov) * Math.min(1, dt * 6); camera.updateProjectionMatrix(); }
   P.root.visible = P.ready && camera.position.distanceTo(_look) > 0.8;
   const busy = stickOn || held.size > (held.has('fast') ? 1 : 0) || tp.ptr.size > 0 || P.settle > 0 || camera.position.distanceToSquared(_want) > 1e-5 || Math.abs(tp.t - t) > 0.004;
@@ -552,7 +557,7 @@ function updateHot() {
 controls.addEventListener('start', () => { tween = null; stopTour(); Object.values(btns).forEach(b => b.classList.remove('on')); });
 const clock = new THREE.Clock();
 function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-const RES = { can: isMobile && devicePixelRatio > 1.6, hi: false, idle: 0, lo: Math.min(devicePixelRatio, 1.5), top: Math.min(devicePixelRatio, 2.25) };
+const RES = { can: isMobile && devicePixelRatio > 1.2, hi: false, idle: 0, ema: 0.02, lo: Math.min(devicePixelRatio, 2), top: Math.min(devicePixelRatio, 2.5) };
 function setRes(hi) { RES.hi = hi; const pr = hi ? RES.top : RES.lo; renderer.setPixelRatio(pr); composer.setPixelRatio(pr); }
 window.__res = RES;
 function frame() {
@@ -568,7 +573,7 @@ function frame() {
   let moving = !!tween;
   if (play(dt)) { dirty = true; moving = true; }
   if (!tp.active && controls.update()) dirty = true;
-  if (RES.can) { if (moving) { RES.idle = 0; if (RES.hi) setRes(false); } else { RES.idle += dt; if (!RES.hi && RES.idle > 0.4) { setRes(true); dirty = true; } } }
+  if (RES.can) { if (moving) { RES.idle = 0; if (RES.hi) setRes(false); else if (window.__ready) { RES.ema = RES.ema * 0.92 + dt * 0.08; if (RES.ema > 0.045 && RES.lo > 1) { RES.lo = Math.max(1, RES.lo - 0.25); RES.ema = 0.028; setRes(false); } } } else { RES.idle += dt; if (!RES.hi && RES.idle > 0.4) { setRes(true); dirty = true; } } }
   if (camera.position.y < 0.3) { camera.position.y = 0.3; dirty = true; }
   frameCounter++;
   if (ext.animate && ext.animate(dt)) dirty = true;
