@@ -5,7 +5,7 @@
 // alles aus dem Luftbild-Mesh auf Straßen/Gehwegen/Höfen (Autos, Bäume, Menschen aus den Luftbildern) wird flach unter unseren Boden gedrückt.
 // Abschalten: ?b=0
 import * as THREE from 'three';
-import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js?v=11232250';
+import { TilesRenderer, TileCompressionPlugin, UnloadTilesPlugin, LoadRegionPlugin, SphereRegion } from './lib3dtiles.js?v=11232255';
 
 const URL0 = 'https://berlin-wab.virtualcitymap.de/datasource-data/baselayer/mesh_2025/tileset.json';
 const CREDIT = '3D-Mesh Berlin 2025 © Berlin Partner für Wirtschaft und Technologie GmbH';
@@ -45,11 +45,11 @@ export async function init(W) {
       const im = new Image(); im.src = 'city/gflat.png'; await im.decode();
       const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0);
       const d = g.getImageData(0, 0, im.width, im.height).data; const bits = new Uint8Array(im.width * im.height);
-      for (let i = 0; i < bits.length; i++) bits[i] = d[i * 4] > 127 ? 1 : 0;
+      for (let i = 0; i < bits.length; i++) bits[i] = (d[i * 4] > 127 ? 1 : 0) | (d[i * 4 + 1] > 127 ? 2 : 0);
       return { ...meta, bits };
     } catch (er) { console.warn('gflat fehlt', er); return null; }
   })();
-  const flatAt = (x, z) => { if (!MASK) return false; const i = Math.floor((x - MASK.X0) / MASK.CS), j = Math.floor((z - MASK.Z0) / MASK.CS); if (i < 0 || j < 0 || i >= MASK.W || j >= MASK.H) return false; return MASK.bits[j * MASK.W + i] === 1; };
+  const flatAt = (x, z, y) => { if (!MASK) return false; const i = Math.floor((x - MASK.X0) / MASK.CS), j = Math.floor((z - MASK.Z0) / MASK.CS); if (i < 0 || j < 0 || i >= MASK.W || j >= MASK.H) return false; const b = MASK.bits[j * MASK.W + i]; return (b & 2) ? true : (b & 1) ? y < 3.2 : false; };
   const FLAT_Y = -0.42; const NOFLAT = Q.get('bflat') === '0';
 
   // ---------- Kacheln
@@ -107,7 +107,7 @@ export async function init(W) {
       for (let i = 0, k = 0; i < pos.count; i++, k += isz) {
         _p.set(o[k], o[k + 1], o[k + 2]).applyMatrix4(_A);
         if (sample && _p.x > -40 && _p.x < 90 && _p.z > 9.5 && _p.z < 29 && _p.y > -150 && _p.y < 150) { if (fine) { if (samples.length < 60000) samples.push(_p.y); } else if (coarse.length < 4000) coarse.push(_p.y); }
-        if (!NOFLAT && flatOK && flatAt(_p.x, _p.z)) { _p.y = FLAT_Y; _p.applyMatrix4(_Ai); arr[k] = _p.x; arr[k + 1] = _p.y; arr[k + 2] = _p.z; changed = true; }
+        if (!NOFLAT && flatOK && flatAt(_p.x, _p.z, _p.y)) { _p.y = FLAT_Y; _p.applyMatrix4(_Ai); arr[k] = _p.x; arr[k + 1] = _p.y; arr[k + 2] = _p.z; changed = true; }
         else if (arr[k] !== o[k] || arr[k + 1] !== o[k + 1] || arr[k + 2] !== o[k + 2]) { arr[k] = o[k]; arr[k + 1] = o[k + 1]; arr[k + 2] = o[k + 2]; changed = true; }
       }
       if (changed) { pos.needsUpdate = true; c.geometry.computeBoundingSphere(); c.geometry.computeBoundingBox?.(); }
