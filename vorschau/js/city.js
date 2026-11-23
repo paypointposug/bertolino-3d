@@ -16,7 +16,7 @@ export async function init(W) {
   const { scene, camera, renderer, ctx, ext, isMobile } = W;
   const t0 = performance.now();
   const getJSON = (u) => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
-  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232145'), getJSON('city/city_vis.json' + VQ)]);
+  const [CJ, CV] = await Promise.all([W.city ? Promise.resolve(W.city) : getJSON('city/city.json?v=11232147'), getJSON('city/city_vis.json' + VQ)]);
   const root = new THREE.Group(); root.name = 'city'; scene.add(root);
   camera.far = Math.max(camera.far, 1500); camera.updateProjectionMatrix();
   const FAR_LAYER = 2; camera.layers.enable(FAR_LAYER);          // Fernbereich + Kleinkram: nicht in der nassen Spiegelung
@@ -120,8 +120,8 @@ export async function init(W) {
         aGx = vec2(du.x * 256.0, -dh.x * vs * hPx) / 2048.0; aGy = vec2(du.y * 256.0, -dh.y * vs * hPx) / 2048.0;
         aWin = aWin > 0.5 ? h21(vec2(bay + sd * 31.0, aWin + sd * 17.0)) : -1.0;
       }`)
-      .replace('#include <map_fragment>', `atlasSetup();
-        vec4 tA = textureGrad(map, aUV, aGx, aGy); vec4 tM = textureGrad(roughnessMap, aUV, aGx, aGy);
+      .replace('#include <map_fragment>', `atlasSetup(); bool trimP = vFa.y > 3.5;     // Typ 4 = Gesims-Kasten (schlichter Stuck)
+        vec4 tA = trimP ? vec4(1.0) : textureGrad(map, aUV, aGx, aGy); vec4 tM = trimP ? vec4(0.86, 0.0, 0.0, 1.0) : textureGrad(roughnessMap, aUV, aGx, aGy);
         float glassM = smoothstep(0.35, 0.8, tM.g); float signBg = smoothstep(0.78, 0.95, tM.b); float signTx = (1.0 - signBg) * smoothstep(0.3, 0.45, tM.b) * (1.0 - smoothstep(0.62, 0.7, tM.b));
         vec3 alb = tA.rgb;
         alb = mix(alb * vColor.rgb, alb, max(glassM, max(signBg, signTx)));
@@ -131,7 +131,7 @@ export async function init(W) {
         diffuseColor.rgb *= alb;`)
       .replace('#include <color_fragment>', '')
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(tM.r, mix(0.07, 0.12, aGround), glassM);')
-      .replace('#include <normal_fragment_maps>', `{ vec3 mapN = textureGrad(normalMap, aUV, aGx, aGy).xyz * 2.0 - 1.0; mapN.xy *= normalScale * (1.0 - glassM); normal = normalize(tbn * mapN); }`)
+      .replace('#include <normal_fragment_maps>', `if (!trimP) { vec3 mapN = textureGrad(normalMap, aUV, aGx, aGy).xyz * 2.0 - 1.0; mapN.xy *= normalScale * (1.0 - glassM); normal = normalize(tbn * mapN); }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         if (uNight > 0.5) {
           float lum = dot(textureGrad(map, aUV, aGx * 10.0 + vec2(0.004, 0.0), aGy * 10.0 + vec2(0.0, 0.004)).rgb, vec3(0.3, 0.5, 0.2));
@@ -146,7 +146,7 @@ export async function init(W) {
         }`)
       .replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\nvec3 vNormalW = inverseTransformDirection(normal, viewMatrix);');
   };
-  facMat.customProgramCacheKey = () => 'cityFacade2';
+  facMat.customProgramCacheKey = () => 'cityFacade3';
 
   const TYPE = { M: 0, S: 1, C: 2, P: 3 };
   const SIGN = [0x1d5e3a, 0x8e1b1b, 0x1c2f5c, 0x18181a, 0xd9d4c4, 0xc7951e, 0xb4501c, 0x1f6c72, 0x5b2a6e, 0x2c2c2c];
@@ -187,8 +187,9 @@ export async function init(W) {
           if (street && L >= 2) {
             const ux = dx / len, uz = dz / len;
             const ledge = (yA, yB, d) => { const g = new THREE.BoxGeometry(len + d * 0.2, yB - yA, d); g.rotateY(Math.atan2(-uz, ux)); g.translate((a[0] + c[0]) / 2 + nx * d / 2, y0 + (yA + yB) / 2, (a[1] + c[1]) / 2 + nz * d / 2); return g; };
-            trim.push(ledge(egh - 0.02, egh + 0.16, 0.12));
-            if (L >= 3) { trim.push(ledge(TOPH - 0.32, TOPH - 0.02, 0.42)); trim.push(ledge(TOPH - 0.5, TOPH - 0.32, 0.2)); }
+            const tcl = [0.86 * tint[0] * j, 0.82 * tint[1] * j, 0.75 * tint[2] * j];
+            trim.push([ledge(egh - 0.02, egh + 0.16, 0.12), tcl]);
+            if (L >= 3) { trim.push([ledge(TOPH - 0.32, TOPH - 0.02, 0.42), tcl]); trim.push([ledge(TOPH - 0.5, TOPH - 0.32, 0.2), tcl]); }
           }
           if (t === 'P' && r() < 0.35 && len > 4 && L >= 3) {   // Schornstein an der Brandwand
             const s = 0.2 + r() * 0.6; chim.push([a[0] + dx * s - nx * 0.5, y1, a[1] + dz * s - nz * 0.5, Math.atan2(-dz, dx), 0.8 + r() * 0.5]);
@@ -215,7 +216,7 @@ export async function init(W) {
           if (!jc) tri(C0, [icx, y1, icz], CI, [0, 0, dep / 4, 0, 0, sl / 4]);
         }
         if (P.length) { const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); sg.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2)); sg.computeVertexNormals();
-          const rc = 0.8 + r() * 0.35; sg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(P.length).fill(rc), 3)); slopes.push(sg); }
+          const rc = 0.8 + r() * 0.35; sg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(P.length).fill(rc), 3)); sg.setAttribute('rk', new THREE.BufferAttribute(new Float32Array(P.length / 3).fill(1), 1)); slopes.push(sg); }
       }
       // Flachdach
       try {
@@ -224,45 +225,44 @@ export async function init(W) {
         const g = new THREE.ShapeGeometry(sh); g.rotateX(-Math.PI / 2); g.translate(0, y1 + 0.02, 0);
         const rk = r(), cv = 0.75 + r() * 0.4; const cc = rk < 0.22 ? [1.45 * cv, 0.78 * cv, 0.6 * cv] : rk < 0.3 ? [0.82 * cv, 0.95 * cv, 0.78 * cv] : [cv, cv, cv * 1.02];   // Teerpappe / Ziegelrot / Kies-grün
         const ca = new Float32Array(g.attributes.position.count * 3); for (let i = 0; i < ca.length; i += 3) { ca[i] = cc[0]; ca[i + 1] = cc[1]; ca[i + 2] = cc[2]; } g.setAttribute('color', new THREE.BufferAttribute(ca, 3));
-        g.deleteAttribute('uv'); roofs.push(g);
+        g.setAttribute('rk', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count), 1)); roofs.push(g.toNonIndexed());
       } catch (e) { /* kaputte Grundrisse überspringen */ }
     });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('fa', new THREE.Float32BufferAttribute(fa, 4)); g.setAttribute('fb', new THREE.Float32BufferAttribute(fb, 4));
     g.setAttribute('tcol', new THREE.Float32BufferAttribute(tc, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx);
-    g.computeBoundingSphere(); g.computeBoundingBox();
-    return { fac: g, trim: trim.length ? merge(trim) : null, roof: roofs.length ? merge(roofs) : null, slope: slopes.length ? merge(slopes) : null, chim };
+    const parts = [g.toNonIndexed()];
+    for (const [tg, cl] of trim) {     // Gesims-Kästen: gleiche Attribute, Typ 4 = schlichter Stuck (kein Atlas)
+      const t = tg.toNonIndexed(); tg.dispose(); const n = t.attributes.position.count;
+      const f4 = new Float32Array(n * 4), f4b = new Float32Array(n * 4), c3 = new Float32Array(n * 3), t3 = new Float32Array(n * 3), u2 = new Float32Array(n * 2);
+      for (let i = 0; i < n; i++) { f4[i * 4 + 1] = 4; f4[i * 4 + 3] = 1; f4b[i * 4 + 1] = 1; f4b[i * 4 + 2] = 999; f4b[i * 4 + 3] = 999; c3[i * 3] = cl[0]; c3[i * 3 + 1] = cl[1]; c3[i * 3 + 2] = cl[2]; }
+      t.setAttribute('fa', new THREE.BufferAttribute(f4, 4)); t.setAttribute('fb', new THREE.BufferAttribute(f4b, 4)); t.setAttribute('color', new THREE.BufferAttribute(c3, 3)); t.setAttribute('tcol', new THREE.BufferAttribute(t3, 3)); t.setAttribute('uv', new THREE.BufferAttribute(u2, 2));
+      parts.push(t);
+    }
+    g.dispose();
+    const fac = merge(parts); fac.computeBoundingSphere();
+    // Schornsteine als Teil des Dach-Netzes
+    for (const c of chim) { const cg = new THREE.BoxGeometry(0.55, c[4], 0.9).toNonIndexed(); cg.translate(0, c[4] / 2, 0); cg.rotateY(c[3]); cg.translate(c[0], c[1], c[2]);
+      const n = cg.attributes.position.count; cg.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).map((v, i) => [0.54, 0.35, 0.28][i % 3]), 3)); cg.setAttribute('rk', new THREE.BufferAttribute(new Float32Array(n).fill(2), 1)); roofs.push(cg); }
+    for (const rg of roofs) if (!rg.attributes.uv) rg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(rg.attributes.position.count * 2), 2));
+    const roof = merge([...roofs, ...slopes]); roof.computeBoundingSphere();
+    return { fac, roof };
   }
-  const trimMat = std(0xd9d0bf, 0.88); const roofMat = std(0xffffff, 0.92, 0, { map: T('city_flat.jpg'), vertexColors: true });
-  const slopeMat = std(0xffffff, 0.8, 0, { map: T('city_roof.jpg'), vertexColors: true });
-  slopeMat.side = THREE.DoubleSide;
-  // Dach-Textur in Weltkoordinaten (Flachdach hat keine UV)
+  // Dächer: Flachdach (Weltkoordinaten), Mansarde (Ziegel), Schornstein (nur Farbe) – EIN Netz
+  const roofMat = std(0xffffff, 0.9, 0, { map: T('city_flat.jpg'), vertexColors: true, side: THREE.DoubleSide });
+  const tileT = T('city_roof.jpg');
   roofMat.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vRw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRw = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vRw;').replace('#include <map_fragment>', 'diffuseColor *= texture2D(map, vRw / 6.0);');
+    sh.uniforms.tileT = { value: tileT };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rk; varying float vRk; varying vec2 vRw; varying vec2 vRu;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRw = (modelMatrix * vec4(transformed, 1.0)).xz; vRk = rk; vRu = uv;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D tileT; varying float vRk; varying vec2 vRw; varying vec2 vRu;')
+      .replace('#include <map_fragment>', 'diffuseColor.rgb *= vRk < 0.5 ? texture2D(map, vRw / 6.0).rgb : vRk < 1.5 ? texture2D(tileT, vRu).rgb : vec3(1.0);')
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vRk > 0.5 && vRk < 1.5 ? 0.72 : 0.92;');
   };
-  const allChim = [];
-  function addBuildings(list, walls, far) {
-    const G = buildingGeos(list, walls);
-    const m = new THREE.Mesh(G.fac, facMat); m.castShadow = true; m.receiveShadow = true; m.name = far ? 'facFar' : 'fac'; root.add(m); if (far) farOnly(m);
-    if (G.trim) { const t = new THREE.Mesh(G.trim, trimMat); t.castShadow = !far; t.receiveShadow = true; root.add(t); if (far) farOnly(t); }
-    if (G.roof) { const t = new THREE.Mesh(G.roof, roofMat); t.receiveShadow = true; root.add(t); if (far) farOnly(t); }
-    if (G.slope) { const t = new THREE.Mesh(G.slope, slopeMat); t.castShadow = !far; t.receiveShadow = true; root.add(t); if (far) farOnly(t); }
-    allChim.push(...G.chim);
-    return m;
-  }
-  addBuildings(CJ.buildings, CV.walls, false);
-  // Fernbereich in 4 Viertel (Sichtbarkeit / Sortierung)
-  { const q = [[], [], [], []], qw = [[], [], [], []];
-    CV.far.forEach((b, i) => { const cx = b.p.reduce((s, p) => s + p[0], 0) / b.p.length, cz = b.p.reduce((s, p) => s + p[1], 0) / b.p.length; const k = (cx > 50 ? 1 : 0) + (cz > -50 ? 2 : 0); q[k].push(b); qw[k].push(CV.farWalls[i]); });
-    q.forEach((l, k) => { if (l.length) addBuildings(l, qw[k], true); }); }
-  if (allChim.length) {
-    const cg = new THREE.BoxGeometry(0.55, 1, 0.9); cg.translate(0, 0.5, 0);
-    const cm = new THREE.InstancedMesh(cg, std(0x8a5a48, 0.9), allChim.length); const o = new THREE.Object3D();
-    allChim.forEach((c, i) => { o.position.set(c[0], c[1], c[2]); o.rotation.set(0, c[3], 0); o.scale.set(1, c[4], 1); o.updateMatrix(); cm.setMatrixAt(i, o.matrix); });
-    cm.castShadow = true; root.add(cm);
-  }
+  roofMat.customProgramCacheKey = () => 'cityRoof2';
+  { const G = buildingGeos([...CJ.buildings, ...CV.far], [...CV.walls, ...CV.farWalls]);
+    const m = new THREE.Mesh(G.fac, facMat); m.castShadow = true; m.receiveShadow = true; m.name = 'fac'; root.add(m);
+    const rm = new THREE.Mesh(G.roof, roofMat); rm.castShadow = true; rm.receiveShadow = true; rm.name = 'roofs'; root.add(rm); }
 
   // ================================================================ BODEN
   function shapeGeo(polys, y) {
@@ -277,18 +277,21 @@ export async function init(W) {
     return gs.length ? merge(gs) : null;
   }
   const wetBase = (sh, k) => { if (ext && ext.wetShader) ext.wetShader(sh, k); };
+  let grassTex = null;
   // Gehweg: Platten + Mosaikstreifen (an Bordstein und Hauswand), Ausrichtung nach Straße (Boden-Info-Bild)
   const gtex = TL.load('city/ground.png' + VQ, () => W.requestRender()); gtex.colorSpace = THREE.NoColorSpace; gtex.flipY = false; gtex.minFilter = THREE.LinearFilter; gtex.generateMipmaps = false;
   const slabT = ctx.tex('sidewalk_slab.jpg', { repeat: [1, 1] }) || T('city_asphalt.jpg'), mosT = ctx.tex('sidewalk_mosaic.jpg', { repeat: [1, 1] }) || T('city_asphalt.jpg');
   const macroT = T('city_macro.jpg', { srgb: false });
-  const walkMat = std(0xaeaca7, 0.85, 0, { map: slabT });
+  const walkMat = std(0xffffff, 0.85, 0, { map: slabT, side: THREE.DoubleSide });   // Gehweg + Bordstein + Rasengleis (gk 0/1/2)
   walkMat.userData.wet = true;
   walkMat.onBeforeCompile = (sh) => {
     addLampUniforms(sh); sh.uniforms.gTex = { value: gtex }; sh.uniforms.mosT = { value: mosT }; sh.uniforms.macT = { value: macroT };
     sh.uniforms.gRect = { value: new THREE.Vector4(CV.ground.X0, CV.ground.Z0, CV.ground.W * CV.ground.CS, CV.ground.H * CV.ground.CS) };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.uniforms.grassT = { value: null };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float gk; varying float vGk; varying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz; vGk = gk;');
+    sh.uniforms.grassT.value = grassTex;
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying vec3 vGw; uniform sampler2D gTex; uniform sampler2D mosT; uniform sampler2D macT; uniform vec4 gRect; ${LAMP_GLSL}`)
+      varying float vGk; varying vec3 vGw; uniform sampler2D gTex; uniform sampler2D mosT; uniform sampler2D macT; uniform sampler2D grassT; uniform vec4 gRect; ${LAMP_GLSL}`)
       .replace('#include <map_fragment>', `
         vec2 gq = (vGw.xz - gRect.xy) / gRect.zw; float inR = step(0.0, gq.x) * step(0.0, gq.y) * step(gq.x, 1.0) * step(gq.y, 1.0);
         vec4 gf = texture2D(gTex, clamp(gq, 0.0, 1.0));
@@ -298,43 +301,43 @@ export async function init(W) {
         float mos = max(1.0 - step(0.82, dC), 1.0 - step(0.45, dB));
         vec3 slab = texture2D(map, ruv / 2.0).rgb; vec3 mo = texture2D(mosT, ruv).rgb * vec3(1.18, 1.16, 1.1);
         vec3 mc = texture2D(macT, vGw.xz / 37.0).rgb;
-        vec3 gc = mix(slab, mo, mos) * (0.88 + 0.24 * mc.r) * (1.0 - 0.06 * mc.g);
+        vec3 gc = mix(slab, mo, mos) * (0.88 + 0.24 * mc.r) * (1.0 - 0.06 * mc.g) * vec3(0.42, 0.41, 0.395);
+        if (vGk > 1.5) gc = texture2D(grassT, vGw.xz / 2.3).rgb * (0.8 + 0.4 * texture2D(macT, vGw.xz / 23.0).r);
+        else if (vGk > 0.5) { vec3 cm = texture2D(macT, vGw.xz / 3.1 + vGw.y).rgb; float joint = smoothstep(0.0, 0.03, abs(fract((vGw.x + vGw.z) / 1.0) - 0.5) - 0.47); gc = vec3(0.27, 0.26, 0.235) * (0.8 + 0.35 * cm.r) * (1.0 - 0.35 * joint); }
         diffuseColor.rgb *= gc;`)
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (uNight > 0.5) totalEmissiveRadiance += diffuseColor.rgb * lampAt(vGw.xz) * 2.4;');
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vGk > 1.5 ? 0.95 : vGk > 0.5 ? 0.78 : 0.85;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (uNight > 0.5) totalEmissiveRadiance += diffuseColor.rgb * lampAt(vGw.xz) * (vGk > 1.5 ? 1.5 : vGk > 0.5 ? 2.2 : 2.4);');
     wetBase(sh, 0.1);
   };
-  walkMat.customProgramCacheKey = () => 'cityWalk1';
-  { const g = shapeGeo(CV.walk, 0.0); if (g) { const m = new THREE.Mesh(g, walkMat); m.receiveShadow = true; m.name = 'walk'; root.add(m); if (ext && ext.addWet) ext.addWet(m); } }
+  walkMat.customProgramCacheKey = () => 'cityWalk2';
+  const GW = [], GR = [];      // Boden-Teile: Gehweg-Netz (Gehweg, Bordstein, Rasengleis) und Fahrbahn-Netz (Asphalt, Markierung, Schiene)
+  const tagG = (g, k) => { if (g.index) { const n = g.toNonIndexed(); g.dispose(); g = n; } if (g.attributes.uv) g.deleteAttribute('uv'); if (!g.attributes.normal) g.computeVertexNormals();
+    g.setAttribute('gk', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count).fill(k), 1)); return g; };
+  { const g = shapeGeo(CV.walk, 0.0); if (g) GW.push(tagG(g, 0)); }
 
   // Fahrbahn
   const asphT = T('city_asphalt.jpg');
-  const roadMat = std(0xffffff, 0.82, 0, { map: asphT });
+  const roadMat = std(0xffffff, 0.82, 0, { map: asphT, side: THREE.DoubleSide });   // Asphalt + Markierung + Schiene (gk 0/1/2)
   roadMat.userData.wet = true;
   roadMat.onBeforeCompile = (sh) => {
     addLampUniforms(sh); sh.uniforms.macT = { value: macroT };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nvarying vec3 vGw; uniform sampler2D macT; ${LAMP_GLSL}`)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float gk; varying float vGk; varying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz; vGk = gk;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nvarying float vGk; varying vec3 vGw; uniform sampler2D macT; ${LAMP_GLSL}`)
       .replace('#include <map_fragment>', `
         vec3 mc = texture2D(macT, vGw.xz / 53.0).rgb; vec3 mc2 = texture2D(macT, vGw.xz / 11.0).rgb;
         vec3 ac = texture2D(map, vGw.xz / 8.0).rgb * (0.82 + 0.3 * mc.r) * (0.93 + 0.12 * mc2.g);
+        if (vGk > 1.5) ac = vec3(0.48, 0.5, 0.52);
+        else if (vGk > 0.5) { vec3 w1 = texture2D(macT, vGw.xz / 4.0).rgb, w2 = texture2D(macT, vGw.xz * 1.7).rgb; ac = vec3(0.79, 0.78, 0.74) * mix(0.42, 1.0, smoothstep(0.25, 0.6, w1.r * 0.6 + w2.g * 0.6)); }
         diffuseColor.rgb *= ac;`)
-      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = roughness * (0.85 + 0.3 * mc.b);')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (uNight > 0.5) totalEmissiveRadiance += diffuseColor.rgb * lampAt(vGw.xz) * 3.2;');
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vGk > 1.5 ? 0.28 : vGk > 0.5 ? 0.55 : roughness * (0.85 + 0.3 * mc.b);')
+      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vGk > 1.5 ? 0.95 : 0.0;')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (uNight > 0.5) totalEmissiveRadiance += diffuseColor.rgb * lampAt(vGw.xz) * (vGk > 1.5 ? 2.0 : vGk > 0.5 ? 2.6 : 3.2);');
     wetBase(sh, 0.3);
   };
-  roadMat.customProgramCacheKey = () => 'cityRoad1';
-  { const g = shapeGeo([...CJ.asphalt, ...CV.farAsphalt], -0.14); if (g) { const m = new THREE.Mesh(g, roadMat); m.receiveShadow = true; m.name = 'road'; root.add(m); if (ext && ext.addWet) ext.addWet(m); } }
+  roadMat.customProgramCacheKey = () => 'cityRoad2';
+  { const g = shapeGeo([...CJ.asphalt, ...CV.farAsphalt], -0.14); if (g) GR.push(tagG(g, 0)); }
 
   // ================================================================ BORDSTEINE (Profil wie im Modell: Fase zur Fahrbahn)
-  const curbMat = std(0x8e8c85, 0.78, 0, { side: THREE.DoubleSide });
-  curbMat.onBeforeCompile = (sh) => {
-    addLampUniforms(sh); sh.uniforms.macT = { value: macroT };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nvarying vec3 vGw; uniform sampler2D macT; ${LAMP_GLSL}`)
-      .replace('#include <map_fragment>', 'vec3 mc = texture2D(macT, vGw.xz / 3.1 + vGw.y).rgb; diffuseColor.rgb *= 0.8 + 0.35 * mc.r; float joint = smoothstep(0.0, 0.03, abs(fract((vGw.x + vGw.z) / 1.0) - 0.5) - 0.47); diffuseColor.rgb *= 1.0 - 0.35 * joint;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (uNight > 0.5) totalEmissiveRadiance += diffuseColor.rgb * lampAt(vGw.xz) * 2.2;');
-  };
-  curbMat.customProgramCacheKey = () => 'cityCurb1';
   const roadPolys = CJ.asphalt;
   const inRoad = (x, z) => roadPolys.some(pl => inPoly(pl, x, z));
   function sweep(lines, prof, yBase, sideFn) {      // Profil (d quer zum Gehweg, y) entlang Linien
@@ -369,11 +372,11 @@ export async function init(W) {
   }
   const CURB = [[0, -0.16], [0, -0.05], [0.06, 0.0], [0.25, 0.0], [0.27, -0.02]];
   { const g = sweep([...CJ.curbs, ...(CV.farCurbs || [])], CURB, 0, (x, z) => inRoad(x, z) || CV.farAsphalt.some(pl => inPoly(pl, x, z)));
-    const m = new THREE.Mesh(g, curbMat); m.receiveShadow = true; m.castShadow = false; m.name = 'curbs'; root.add(m); }
+    GW.push(tagG(g, 1)); }
 
   // ================================================================ MARKIERUNGEN
   const mk = { pos: [] };
-  const MY = -0.135;
+  const MY = -0.128;
   function quad(ax, az, bx, bz, w) { const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz); if (l < 0.01) return; const nx = -dz / l * w / 2, nz = dx / l * w / 2;
     mk.pos.push(ax - nx, MY, az - nz, bx + nx, MY, bz + nz, bx - nx, MY, bz - nz, ax - nx, MY, az - nz, ax + nx, MY, az + nz, bx + nx, MY, bz + nz); }
   function polyLen(P) { let s = 0; for (let i = 1; i < P.length; i++) s += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); return s; }
@@ -424,33 +427,14 @@ export async function init(W) {
       hits.sort((p, q) => p[0] - q[0]); for (let k = 0; k + 1 < hits.length; k += 2) quad(hits[k][0], hits[k][1], hits[k + 1][0], hits[k + 1][1], 0.3);
     }
   }
-  const markMat = std(0xe6e4dc, 0.55, 0, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  markMat.userData.wet = true;
-  markMat.onBeforeCompile = (sh) => {
-    addLampUniforms(sh); sh.uniforms.macT = { value: macroT };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>\nvarying vec3 vGw; uniform sampler2D macT; ${LAMP_GLSL}`)
-      .replace('#include <map_fragment>', 'vec3 mc = texture2D(macT, vGw.xz / 4.0).rgb; vec3 mc2 = texture2D(macT, vGw.xz * 1.7).rgb; diffuseColor.rgb *= mix(0.42, 1.0, smoothstep(0.25, 0.6, mc.r * 0.6 + mc2.g * 0.6));')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (uNight > 0.5) totalEmissiveRadiance += diffuseColor.rgb * lampAt(vGw.xz) * 2.6;');
-    wetBase(sh, 0.25);
-  };
-  markMat.customProgramCacheKey = () => 'cityMark1';
-  { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(mk.pos, 3)); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, markMat); m.receiveShadow = true; m.name = 'markings'; root.add(m); if (ext && ext.addWet) ext.addWet(m); }
+  { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(mk.pos, 3)); g.computeVertexNormals(); GR.push(tagG(g, 1)); }
 
   // ================================================================ TRAM: Rasengleis + Schienen
   function canvasTex(w, h, draw, srgb = true) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace; t.anisotropy = maxAniso; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; }
-  const grassT = canvasTex(256, 256, (g, w, h) => { const r = rng(5); g.fillStyle = '#4c6a2c'; g.fillRect(0, 0, w, h);
+  grassTex = canvasTex(256, 256, (g, w, h) => { const r = rng(5); g.fillStyle = '#4c6a2c'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 9000; i++) { const v = r(); g.fillStyle = `rgba(${60 + v * 70 | 0},${90 + v * 60 | 0},${30 + v * 30 | 0},0.6)`; g.fillRect(r() * w, r() * h, 1 + r() * 1.5, 2 + r() * 4); }
     for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(120,110,80,${0.15 + r() * 0.2})`; g.beginPath(); g.arc(r() * w, r() * h, 3 + r() * 9, 0, 6.3); g.fill(); } });
-  const grassMat = std(0xffffff, 0.95, 0, { map: grassT });
-  grassMat.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGw;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGw = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vGw; uniform sampler2D macT;').replace('#include <map_fragment>', 'diffuseColor.rgb *= texture2D(map, vGw.xz / 2.3).rgb * (0.8 + 0.4 * texture2D(macT, vGw.xz / 23.0).r);');
-    sh.uniforms.macT = { value: macroT };
-  };
-  grassMat.customProgramCacheKey = () => 'cityGrass1';
-  { const g = shapeGeo([...CJ.trackbed, ...(CV.farTrack || [])], -0.03); if (g) { const m = new THREE.Mesh(g, grassMat); m.receiveShadow = true; root.add(m); } }
+  { const g = shapeGeo([...CJ.trackbed, ...(CV.farTrack || [])], -0.03); if (g) GW.push(tagG(g, 2)); }
   { const rp = []; const RW = 0.075;
     for (const T0 of [...CJ.tram, ...(CV.farTram || [])]) {
       const L = polyLen(T0);
@@ -465,7 +449,10 @@ export async function init(W) {
       }
     }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, std(0xb8bcc0, 0.28, 0.95, { side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); m.name = 'rails'; root.add(m); }
+    GR.push(tagG(g, 2)); }
+  // die beiden Boden-Netze
+  for (const [list, mat, name] of [[GW, walkMat, 'walk'], [GR, roadMat, 'road']]) {
+    const g = merge(list); g.computeBoundingSphere(); const m = new THREE.Mesh(g, mat); m.receiveShadow = true; m.name = name; root.add(m); if (ext && ext.addWet) ext.addWet(m); }
 
   // ================================================================ STADTMÖBEL: statische Teile in EINEM Netz (Farbe/Rauheit/Metall je Ecke)
   const PB = []; const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v = new THREE.Vector3(), _s = new THREE.Vector3(1, 1, 1), _yax = new THREE.Vector3(0, 1, 0);
