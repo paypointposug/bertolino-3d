@@ -9,7 +9,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { buildExterior } from './exterior.js';
+import { buildExterior } from './exterior.js?v=11230456';
 
 let dirty = true;
 function requestRender() { dirty = true; }
@@ -65,14 +65,14 @@ const loadbar = document.getElementById('loadbar');
 manager.onProgress = (url, a, b) => { loadbar.style.width = Math.round(100 * a / Math.max(b, 1)) + '%'; requestRender(); };
 const texLoader = new THREE.TextureLoader();
 let manifest = {};
-try { manifest = await (await fetch('tex/manifest.json', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
+try { manifest = await (await fetch('tex/manifest.json?v=11230456', { cache: 'no-cache' })).json(); } catch (e) { manifest = {}; }
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const texCache = new Map();
 function tex(name, opts = {}) {
   if (!manifest[name]) return null;
   const key = name + JSON.stringify(opts);
   if (texCache.has(key)) return texCache.get(key);
-  const t = texLoader.load('tex/' + name, () => requestRender());
+  const t = texLoader.load('tex/' + name + '?v=11230456', () => requestRender());
   t.colorSpace = opts.srgb === false ? THREE.NoColorSpace : THREE.SRGBColorSpace;
   t.anisotropy = Math.min(maxAniso, isMobile ? 4 : 8);
   if (opts.repeat || opts.wrap) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
@@ -87,11 +87,11 @@ const ctx = { frameId: () => frameCounter, resizeHooks: [], scene, tex, renderer
 const ext = await buildExterior(ctx);
 let interior = null;
 try {
-  const mod = await import('./interior.js');
+  const mod = await import('./interior.js?v=11230456');
   interior = mod.buildInterior(ctx);
 } catch (e) { console.warn('Innenraum nicht geladen', e); }
 let plan = null;
-try { const pm = await import('./plan.js'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
+try { const pm = await import('./plan.js?v=11230456'); plan = pm.buildPlan(ctx); } catch (e) { console.warn('Planung nicht geladen', e); }
 
 // ---------- views ----------
 const V = {
@@ -338,7 +338,7 @@ function renderCard() {
     opt(seg('ic'), ic(tour ? 'stop' : 'play'), !!tour, () => { tourBtn.onclick(); renderCard(); }, 'Rundgang');
     info(isMobile ? 'Links laufen · rechts umschauen' : 'W A S D laufen · Maus umschauen');
   } else {
-    info(s === 'lbox' ? 'links 0,70 × 0,90 m · rechts 1,10 × 2,25 m' : s === 'night' ? 'Rund, weiß leuchtend · Ø ca. 1,50 m' : s === 'bert' ? 'ca. 2,70 × 1,85 m · Logo Ø ca. 1,70 m' : 'Unter dem Fenster · ca. 3,0 × 0,9 m');
+    info(s === 'lbox' ? 'links 0,60 × 2,20 m · rechts 1,10 × 2,25 m' : s === 'night' ? 'Rund, weiß leuchtend · Ø ca. 1,50 m' : s === 'bert' ? 'ca. 2,70 × 1,85 m · Logo Ø ca. 1,70 m' : 'Unter dem Fenster · ca. 3,0 × 0,9 m');
     const g = seg(); opt(g, 'Vorher', variant !== 'neu', () => { setVariant('ist'); }); opt(g, 'Nachher', variant === 'neu', () => { setVariant('neu'); });
   }
   updateRot(); requestRender();
@@ -370,7 +370,7 @@ const HEAD = 1.6;
 
 // Begehbarkeits-Karte (tex/nav.png: R = Person gesperrt, G = Kamera gesperrt; 0,1 m je Pixel)
 const NAV = { ok: false, X0: -14, Z0: -9, CS: 0.1, W: 0, H: 0, d: null };
-{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png'; }
+{ const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0); NAV.d = g.getImageData(0, 0, im.width, im.height).data; NAV.W = im.width; NAV.H = im.height; NAV.ok = true; placePlayer(P.x, P.z, P.face); requestRender(); }; im.src = 'tex/nav.png?v=11230456'; }
 function navAt(x, z, ch) {
   if (!NAV.ok) return ch === 0 ? !(z > 0.3 && z < 11 && x > -9 && x < 22) : false;
   const i = Math.floor((x - NAV.X0) / NAV.CS), j = Math.floor((z - NAV.Z0) / NAV.CS);
@@ -525,7 +525,7 @@ const HOT = [
   { k: 'night', icon: 'cup', at: [8.47, 3.52, 0.32], side: 'out', box: [7.05, 3.4, 0.05, 8.65, 5.0, 0.4], neu: true },
   { k: 'bert', icon: 'pizza', at: [11.9, 3.2, 0.34], side: 'out', box: [9.3, 3.1, 0.05, 12.0, 5.0, 0.45], neu: true },
   { k: 'lbox', icon: 'bulb', at: [12.72, 2.3, 0.2], side: 'out', box: [11.5, 0.2, 0.0, 12.7, 2.55, 0.25], neu: true },
-  { k: 'lbox', icon: 'bulb', at: [7.94, 2.18, 0.2], side: 'out', box: [7.55, 1.7, 0.0, 8.33, 2.66, 0.25], neu: true, nomark: true },
+  { k: 'lbox', icon: 'bulb', at: [8.07, 1.3, 0.2], side: 'out', box: [7.75, 0.1, 0.0, 8.4, 2.36, 0.25], neu: true, nomark: true },
   { k: 'panel', icon: 'pizza', at: [9.9, 0.6, 0.12], side: 'out', box: [8.4, 0.1, 0.0, 11.4, 1.0, 0.2], neu: true, nomark: true },
 ];
 const hotsEl = document.getElementById('hots'); const ray = new THREE.Raycaster(); const _v2 = new THREE.Vector2(), _p3 = new THREE.Vector3();

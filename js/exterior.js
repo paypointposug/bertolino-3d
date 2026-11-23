@@ -539,22 +539,24 @@ export async function buildExterior(ctx) {
       return g;
     };
     const bPfeiler = board('board_pasta_white.jpg', 7.58, 8.30, 1.74, 2.62, 0.06, M.black, 0xf2f2ee);
-    { const g = board('board_ciao_black.jpg', 7.66, 8.28, 0.0, 1.39, 0.0, std(0x7a5534, 0.6), 0x1d1f1f); g.position.z = 0.17; g.rotation.x = -0.1; g.position.y = 0.70; }
+    let bCiao = null;
+    { const g = board('board_ciao_black.jpg', 7.66, 8.28, 0.0, 1.39, 0.0, std(0x7a5534, 0.6), 0x1d1f1f); bCiao = g; g.position.z = 0.17; g.rotation.x = -0.1; g.position.y = 0.70; }
     const bRechts = board('board_hallo_white.jpg', 11.55, 12.64, 0.25, 2.49, 0.05, M.black, 0xf2f2ee);
     // Nachher: statt der beiden weißen Tafeln je ein Leuchtkasten (Alu-Rahmen, von innen beleuchtete Front)
     const lightBox = (name, x0, x1, y0, y1, z) => {
       const t = tex(name); const W = x1 - x0, H = y1 - y0, D = 0.10;
       const g = new THREE.Group(); g.position.set((x0 + x1) / 2, (y0 + y1) / 2, z); store.add(g);
       const hs = new THREE.Mesh(bevGeo(W, H, D, 0, 0, D / 2, 0.012), std(0xd7dbe0, 0.3, 0.85)); hs.castShadow = true; g.add(hs);
-      const fm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.22, map: t || null, emissive: 0xffffff, emissiveMap: t || null, emissiveIntensity: 0 }); emissive(fm, 0.42, 0.1);
+      const fm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.22, map: t || null, emissive: 0xffffff, emissiveMap: t || null, emissiveIntensity: 0 }); emissive(fm, 0.62, 0.12);
       plane(g, fm, 0, 0, D + 0.002, W - 0.045, H - 0.045);
-      const gl = canvasTex(128, 128, (c) => { const gr = c.createRadialGradient(64, 64, 20, 64, 64, 64); gr.addColorStop(0, 'rgba(255,236,150,0.20)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0, 0, 128, 128); });
+      const gl = canvasTex(128, 128, (c) => { const gr = c.createRadialGradient(64, 64, 20, 64, 64, 64); gr.addColorStop(0, 'rgba(255,236,150,0.30)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = gr; c.fillRect(0, 0, 128, 128); });
+      { const fl = new THREE.Mesh(new THREE.PlaneGeometry(W * 2.6 + 0.6, 2.0), glowReg(new THREE.MeshBasicMaterial({ map: gl, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 0.5, 0.0)); fl.rotation.x = -Math.PI / 2; fl.position.set(0, -(y0 + y1) / 2 + 0.025, 0.95); fl.renderOrder = 3; g.add(fl); }
       plane(g, glowReg(new THREE.MeshBasicMaterial({ map: gl, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), 0.3, 0.0), 0, 0, 0.004, W * 1.7, H * 1.35).renderOrder = 4;
       g.visible = false; return g;
     };
-    const lbPfeiler = lightBox('plan_lb_pfeiler.jpg', 7.58, 8.30, 1.74, 2.62, 0.05);
+    const lbPfeiler = lightBox('plan_lb_pfeiler.jpg', 7.77, 8.38, 0.12, 2.33, 0.05); // ganzer Pfeiler zwischen Tür und Bertolino-Fenster
     const lbRechts = lightBox('plan_lb_rechts.jpg', 11.55, 12.64, 0.25, 2.49, 0.05);
-    lookHooks.push((lk) => { bPfeiler.visible = bRechts.visible = !lk.neu; lbPfeiler.visible = lbRechts.visible = !!lk.neu; });
+    lookHooks.push((lk) => { if (bCiao) bCiao.visible = !lk.neu; bPfeiler.visible = bRechts.visible = !lk.neu; lbPfeiler.visible = lbRechts.visible = !!lk.neu; });
     ctx.dims.push({ a: [11.55, 2.56, 0.25], b: [12.64, 2.56, 0.25], label: '<b>Leuchtkasten</b><br>ca. 1,10 × 2,25 m', v: 'neu' });
     // small LED flood light on top of the HALLO board (visible in fenster.jpg)
     {
@@ -898,6 +900,7 @@ export async function buildExterior(ctx) {
     const bt = tex('aframe_blue.jpg'); const bm = bt ? std(0xffffff, 0.5, 0, { map: bt }) : std(0x9cc6d6, 0.6);
     plane(g, bm, 0, 0.785, 0.017, 0.6, 0.9); plane(g, bm, 0, 0.785, -0.017, 0.6, 0.9, Math.PI);
     shadowBlobs.push([x, z, 0.9]);
+    lookHooks.push((lk) => { g.position.x = lk.neu ? 13.25 : x; g.position.z = lk.neu ? 1.25 : z; });
   }
   // --- high tables with square red/white gingham cloths draped over a round top
   {
