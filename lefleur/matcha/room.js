@@ -431,23 +431,7 @@ function slats(host, plane, a0, a1, y0, y1, seed) {
   const g = shadeVC(hostUV(mergeGeos(geos), host), faceK(fx, fz, 0.95, 0.5, 0.42, 0.4));
   return new THREE.Mesh(g, bakedMat(lin(1, 1, 1), oakV, { vertexColors: true }));
 }
-{
-  const C = S.CAB, P = S.PAN;
-  addF(slats('m_cab_z0', { n: 'z', c: C.z0, s: -1 }, C.x0, C.x1, 0.004, C.y1 - 0.002, 5));
-  addF(slats('m_cab_x0', { n: 'x', c: C.x0, s: -1 }, C.z0, C.z1, 0.004, C.y1 - 0.002, 6));
-  addF(slats('m_cab_x1', { n: 'x', c: C.x1, s: +1 }, C.z0, C.z1, 0.004, C.y1 - 0.002, 7));
-  addF(slats('m_pan_x1', { n: 'x', c: P.x1, s: +1 }, P.z0, P.z1, 0.0, P.y1, 8), 'D');
-  // Rückseite (Personal): 3 Türen, Griffe, Luft unter den Schränken
-  const z = C.z1 + 0.0012, e = eAt('m_cab_z1', [1.8, 0.5, C.z1]);
-  const seam = new THREE.MeshBasicMaterial({ color: lin(0.25 * e[0], 0.25 * e[1], 0.25 * e[2]) });
-  for (const x of [0.92, 1.52, 2.12, 2.72]) addF(new THREE.Mesh(boxG(x - 0.0015, x + 0.0015, 0.125, C.y1, z - 0.001, z), seam));
-  const hm = new THREE.MeshBasicMaterial({ color: lin(0.08 * e[0], 0.08 * e[1], 0.08 * e[2]) });
-  for (const x of [1.22, 1.82, 2.42]) addF(new THREE.Mesh(boxG(x - 0.06, x + 0.06, 0.80, 0.815, z, z + 0.02), hm));
-  const voidM = new THREE.MeshBasicMaterial({ color: lin(0.06 * e[0], 0.06 * e[1], 0.06 * e[2]) });
-  addF(new THREE.Mesh(boxG(0.92, 2.72, 0.0, 0.125, z, z + 0.001), voidM));
-  const lg = litMat('floor', [1.8, 0, C.z1 + 0.3], [0.7, 0.7, 0.7]);
-  for (const x of [0.95, 1.49, 1.55, 2.09, 2.15, 2.69]) addF(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.125, 10).translate(x, 0.0625, C.z1 - 0.03), lg));
-}
+addF(slats('m_pan_x1', { n: 'x', c: S.PAN.x1, s: +1 }, S.PAN.z0, S.PAN.z1, 0.0, S.PAN.y1, 8), 'D');   // Lamellen an Wand D
 
 // --- Bank-Gestell (STEGESUND, Bambus) und Naht zwischen den Polstern
 {
@@ -497,7 +481,7 @@ const CHG = chairGeo();
 S.CHAIRS.forEach(([x, z], i) => {
   const e = eAt(`m_c${i}_y1`, [x, 0.45, z]);
   const m = new THREE.Mesh(CHG, new THREE.MeshBasicMaterial({ color: lin(0.66 * e[0], 0.49 * e[1], 0.29 * e[2]), vertexColors: true, side: THREE.DoubleSide }));
-  m.rotation.y = i < 3 ? Math.PI : Math.atan2(S.TBIG[0] - x, S.TBIG[1] - z); m.position.set(x, 0, z); addF(m);
+  m.rotation.y = S.CHAIRS[i][2]; m.position.set(x, 0, z); addF(m);
   addF(new THREE.Mesh(new THREE.CircleGeometry(0.33, 32).rotateX(-Math.PI / 2).translate(x, 0.0012, z), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.35, color: 0x000000 })));
 });
 
@@ -651,48 +635,34 @@ function plant(x, z, y0, kind, size, seed, wall = null, potR = 0.1, potH = 0.19)
 }
 plant(0.33, 0.36, 0, 'fig', 1.45, 3, null, 0.105, 0.2);                  // Birkenfeige, Ecke am Fenster
 plant(3.455, -0.14, 0, 'paddle', 1.05, 4, null, 0.115, 0.22);           // Paradiesvogelblume, rechts in der Nische
-plant(1.06, 3.88, S.TOP.y1, 'palm', 0.42, 5, null, 0.06, 0.11);         // Areca auf der Theke
-plant(W - 0.15, 1.62, S.SHELF.y, 'round', 0.3, 6, 'B', 0.06, 0.11);    // Monstera auf der Stehbar
+plant(W - 0.15, 3.48, S.SHELF.y, 'palm', 0.42, 5, 'B', 0.06, 0.11);    // Areca auf der Stehbar
+plant(W - 0.15, 1.56, S.SHELF.y, 'round', 0.3, 6, 'B', 0.06, 0.11);    // Monstera auf der Stehbar
 plant(1.08, L - 0.1, S.SHELVES[1] + 0.025, 'grass', 0.22, 7, 'C', 0.045, 0.08);  // Gras oben im Regal
 
-// --- Theke: Matcha-Schale mit Besen, Kassen-Tablet (PayPoint) und Kartenterminal
+// --- Barhocker DALFRED (schwarz, 63–74 cm) an der Stehbar
 {
-  const T = S.TOP, yT = T.y1, eT = (x, z) => eAt('m_top_y1', [x, yT, z]);
-  const mk = (x, z, alb, extra = {}) => { const e = eT(x, z); return new THREE.MeshBasicMaterial({ color: lin(alb[0] * e[0], alb[1] * e[1], alb[2] * e[2]), vertexColors: true, ...extra }); };
-  const bx = 1.62, bz = 3.92;
-  const pts = [[0.001, 0], [0.03, 0], [0.034, 0.008], [0.058, 0.03], [0.068, 0.072], [0.062, 0.072], [0.05, 0.035], [0.001, 0.014]].map(([a, b]) => new THREE.Vector2(a, b));
-  addF(new THREE.Mesh(shadeVC(new THREE.LatheGeometry(pts, 32).translate(bx, yT, bz), roundK(0.5, 1)), mk(bx, bz, [0.78, 0.75, 0.66])));
-  addF(new THREE.Mesh(shadeVC(new THREE.CircleGeometry(0.058, 28).rotateX(-Math.PI / 2).translate(bx, yT + 0.062, bz), () => 1), mk(bx, bz, [0.32, 0.46, 0.16])));
-  const wx = bx + 0.13;
-  addF(new THREE.Mesh(shadeVC(new THREE.CylinderGeometry(0.026, 0.012, 0.06, 20, 1, true).translate(wx, yT + 0.03, bz), roundK(0.5, 1)), mk(wx, bz, [0.68, 0.56, 0.36], { side: THREE.DoubleSide })));
-  addF(new THREE.Mesh(shadeVC(new THREE.CylinderGeometry(0.011, 0.011, 0.06, 12).translate(wx, yT + 0.09, bz), roundK(0.5, 1)), mk(wx, bz, [0.68, 0.56, 0.36])));
-  // Tablet-Kasse auf Ständer (zeigt zum Personal)
-  const tx = 2.42, tz = 4.02, dark = mk(tx, tz, [0.06, 0.06, 0.065]);
-  addF(new THREE.Mesh(shadeVC(new THREE.CylinderGeometry(0.06, 0.07, 0.012, 24).translate(tx, yT + 0.006, tz), roundK(0.5, 1)), dark));
-  addF(new THREE.Mesh(shadeVC(boxG(tx - 0.012, tx + 0.012, yT, yT + 0.17, tz - 0.012, tz + 0.012), roundK(0.5, 1)), dark));
-  const tab = new THREE.Group(); tab.position.set(tx, yT + 0.25, tz + 0.012); tab.rotation.x = -0.35;
-  const tg = shadeVC(boxG(-0.15, 0.15, -0.1, 0.1, -0.008, 0.008), faceK(0, 1, 0.8, 0.5, 0.6, 0.55)); tab.add(new THREE.Mesh(tg, dark));
-  const scr = new THREE.CanvasTexture(cnv(300, 200, (g, w, h) => { g.fillStyle = '#f6f8fb'; g.fillRect(0, 0, w, h); g.fillStyle = '#00afef'; g.fillRect(0, 0, w, 24); g.fillStyle = '#e5e8ee'; for (let i = 0; i < 6; i++) g.fillRect(14 + (i % 3) * 66, 40 + Math.floor(i / 3) * 70, 56, 56); g.fillStyle = '#0f172b'; g.fillRect(222, 40, 64, 140); })); scr.colorSpace = THREE.SRGBColorSpace;
-  const sg = new THREE.PlaneGeometry(0.28, 0.18); sg.translate(0, 0, 0.0085); tab.add(new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ map: scr, color: lin(0.85, 0.85, 0.85) })));
-  addF(tab);
-  const kx = 2.12, kz = 3.98;
-  addF(new THREE.Mesh(shadeVC(boxG(kx - 0.04, kx + 0.04, yT, yT + 0.03, kz - 0.085, kz + 0.085), faceK(0, -1, 0.9, 0.5, 0.6, 0.6)), dark));
+  const g = [];
+  g.push(new THREE.CylinderGeometry(0.17, 0.165, 0.045, 32).translate(0, 0.735, 0));          // Sitz
+  g.push(new THREE.CylinderGeometry(0.026, 0.026, 0.5, 14).translate(0, 0.46, 0));             // Säule
+  g.push(new THREE.TorusGeometry(0.17, 0.009, 8, 32).rotateX(Math.PI / 2).translate(0, 0.3, 0));   // Fußring
+  for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + 0.785, leg = new THREE.CylinderGeometry(0.011, 0.013, 0.46, 8); leg.translate(0, 0.23, 0); leg.applyMatrix4(new THREE.Matrix4().makeRotationZ(0.36)); leg.applyMatrix4(new THREE.Matrix4().makeRotationY(a)); g.push(leg); }
+  const geo = shadeVC(mergeGeos(g), (nx, ny, nz, x, y) => (ny > 0.6 ? 1.0 : ny < -0.6 ? 0.35 : 0.55 + 0.3 * Math.abs(nx)) * (0.5 + 0.5 * sm(0, 0.6, y)));
+  for (const [x, z] of S.STOOLS) {
+    const e = eAt('floor', [x - 0.35, 0, z]);
+    addF(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: lin(0.09 * e[0], 0.09 * e[1], 0.095 * e[2]), vertexColors: true }))).position.set(x, 0, z);
+    addF(new THREE.Mesh(new THREE.CircleGeometry(0.3, 32).rotateX(-Math.PI / 2).translate(x, 0.0012, z), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.35, color: 0x000000 })));
+  }
 }
 FURN.visible = LOOK === 'matcha';
 
 // ------------------------------------------------------------------ Einkaufsliste (geprüfte Preise, Stand 24.11.2026)
 const LIST = [
-  ['Theke', [
-    [3, 'ENHET Unterschrank mit Tür, 60×62×75, weiß', 69.00, 'IKEA', 'https://www.ikea.com/de/en/p/enhet-sink-cabinet-with-door-white-00623032/'],
-    [6, 'ENHET Beine 12,5 cm (2 Stück)', 8.00, 'IKEA', 'https://www.ikea.com/de/en/p/enhet-legs-f-cabinet-white-10449018/'],
-    [1, 'SÄLJAN Arbeitsplatte Eiche-Optik 246 cm (auf 186 kürzen)', 89.00, 'IKEA', 'https://www.ikea.com/de/en/cat/kitchen-worktops-24264/f/oak-kitchen-worktops-f-appearance--50679/'],
-    [2, 'Akustikpaneel Eiche 267×57 cm (Theken-Front)', 44.28, 'Hornbach', 'https://www.hornbach.de/p/akustikpaneel-eiche-einseitig-foliert-2670-x-572-x-19-mm/12382963/'],
-  ]],
   ['Licht', [[4, 'SINNERLIG Hängeleuchte Bambus Ø 27 cm', 29.99, 'IKEA', 'https://www.ikea.com/de/en/p/sinnerlig-pendant-lamp-bamboo-handmade-00508536/']]],
   ['Sitzen', [
     [3, 'STEGESUND Bank Bambus 79×34 cm (Fensternische)', 49.99, 'IKEA', 'https://www.ikea.com/de/en/cat/benches-700319/'],
     [2, 'Bankauflage beige 40×120 cm', 29.95, 'Kaufland', 'https://www.kaufland.de/product/497721620/'],
-    [7, 'LISABO Stuhl Esche (gerade im Angebot, sonst 69,99 €)', 39.99, 'IKEA', 'https://www.ikea.com/de/en/p/lisabo-chair-ash-00457235/'],
+    [8, 'LISABO Stuhl Esche (gerade im Angebot, sonst 69,99 €)', 39.99, 'IKEA', 'https://www.ikea.com/de/en/p/lisabo-chair-ash-00457235/'],
+    [3, 'DALFRED Barhocker schwarz, 63–74 cm (Stehbar)', 49.99, 'IKEA', 'https://www.ikea.com/de/en/cat/bar-stools-chairs-20864/f/black-bar-stools-chairs-f-colors--10139/'],
   ]],
   ['Wände', [
     [1, 'Wandfarbe Pastellgrün 2,5 l (Wand mit Bogen)', 39.99, 'OBI', 'https://www.obi.de/p/5376520/alpina-feine-farben-no-38-essenz-der-natur-pastellgruen-edelmatt-2-5-l'],
@@ -728,7 +698,7 @@ const TOTAL = Math.round(LIST.reduce((s, [, rows]) => s + rows.reduce((a, [n, , 
 const st = { x: W / 2, z: L - 0.9, yaw: 0, pitch: -0.05, mode: 'walk', orbit: { th: 0.75, ph: 0.9, r: 8.2 } };
 const keys = {}; let walkTo = null, tween = null, joy = null, look = null;
 const RECTS = [[0.3, W - 0.3, 0.3, L - 0.3], [W - 0.35, W + S.PAS.t + 0.4, S.PAS.z0 + 0.3, S.PAS.z1 - 0.3], [W + S.PAS.t + 0.0, S.VES.x1 - 0.3, S.VES.z0 + 0.3, S.VES.z1 - 0.3]];
-const BLOCK = [[0.0, 3.65, 0.0, 1.45], [0.1, 1.9, 1.45, 3.2], [0.62, 3.0, 3.43, 4.58]];   // Fensterplätze, großer Tisch, Theke
+const BLOCK = [[0.0, 3.4, 0.0, 1.45], [0.0, 1.0, 1.45, 3.15], [1.0, 2.65, 3.55, 5.2], [3.8, 4.6, 1.65, 3.4]];   // Fenster, Tisch Wand D, großer Tisch, Barhocker
 const inR = (r, x, z) => x >= r[0] && x <= r[1] && z >= r[2] && z <= r[3];
 const free = (x, z) => RECTS.some(r => inR(r, x, z)) && !(x > W - 0.45 && x < W && z > S.SHELF.z0 - 0.1 && z < S.SHELF.z1 + 0.1) && !(LOOK === 'matcha' && BLOCK.some(r => inR(r, x, z)));
 function moveBy(dx, dz) { if (free(st.x + dx, st.z + dz)) { st.x += dx; st.z += dz; return true; } if (free(st.x + dx, st.z)) { st.x += dx; return true; } if (free(st.x, st.z + dz)) { st.z += dz; return true; } return false; }
@@ -737,8 +707,8 @@ const VIEWS_L = {
   bogen: { x: W / 2 - 0.2, z: 0.5, yaw: Math.PI }, wand: { x: W - 0.55, z: 2.6, yaw: Math.PI / 2 },
 };
 const VIEWS_M = {                                            // im Entwurf: Standpunkte zwischen den Möbeln
-  fenster: { x: 3.4, z: 4.72, yaw: 0.27, pitch: -0.14 }, eingang: { x: 4.1, z: 0.62, yaw: 2.62, pitch: -0.1 },
-  bogen: { x: 2.65, z: 1.75, yaw: Math.PI + 0.06, pitch: -0.06 }, wand: { x: 4.0, z: 2.4, yaw: Math.PI / 2, pitch: -0.08 },
+  fenster: { x: 3.3, z: 4.55, yaw: 0.32, pitch: -0.12 }, eingang: { x: 3.62, z: 0.72, yaw: 2.76, pitch: -0.1 },
+  bogen: { x: 2.5, z: 2.0, yaw: Math.PI + 0.12, pitch: -0.05 }, wand: { x: 3.5, z: 2.3, yaw: Math.PI / 2, pitch: -0.08 },
 };
 let VIEWS = LOOK === 'matcha' ? VIEWS_M : VIEWS_L;
 const START = { leer: 'fenster', matcha: 'eingang' };
@@ -763,7 +733,7 @@ function setLook(m, jump = true) {
   MAT.paintC.color.copy(mt ? C_GREEN : C_WALL); MAT.archIn.color.copy(mt ? C_GREEN2 : C_WALL); MAT.reveal.color.copy(mt ? C_GREEN2 : C_WALL);
   FURN.visible = mt; document.body.classList.toggle('matcha', mt);
   document.querySelectorAll('#look button').forEach(b => b.classList.toggle('on', b.dataset.l === m));
-  document.getElementById('sub').textContent = mt ? 'Matcha-Laden · Entwurf' : 'Raum jetzt';
+  document.getElementById('sub').textContent = mt ? 'Gastraum · Matcha-Entwurf' : 'Raum jetzt';
   if (!mt) closeSheet();
   if (jump && st.mode === 'walk' && !free(st.x, st.z)) { const v = VIEWS[START[m]]; Object.assign(st, { x: v.x, z: v.z, yaw: v.yaw, pitch: v.pitch ?? -0.05 }); walkTo = null; tween = null; }
   req();
