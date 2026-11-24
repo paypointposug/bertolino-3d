@@ -806,7 +806,7 @@ function setLook(m, jump = true) {
   LOOK = m; LM = LMS[m]; VIEWS = m === 'matcha' ? VIEWS_M : VIEWS_L;
   for (const mt of BAKED) { mt.lightMap = LM.tex; mt.lightMapIntensity = LM.LMI; }
   const mt = m === 'matcha';
-  MAT.paintC.color.copy(mt ? C_GREEN : C_WALL); MAT.archIn.color.copy(mt ? C_GREEN2 : C_WALL); MAT.reveal.color.copy(mt ? C_GREEN2 : C_WALL);
+  MAT.paintC.color.copy(C_WALL); MAT.archIn.color.copy(C_WALL); MAT.reveal.color.copy(C_WALL);   // Wände bleiben weiß (Kunde hat schon gestrichen)
   FURN.visible = mt; document.body.classList.toggle('matcha', mt);
   document.querySelectorAll('#look button').forEach(b => b.classList.toggle('on', b.dataset.l === m));
   document.getElementById('sub').textContent = mt ? 'Gastraum · Matcha-Entwurf' : 'Raum jetzt';
@@ -875,7 +875,7 @@ const dims = [[W / 2, 0.02, -0.05, fmt(W)], [W / 2, 0.02, L + 0.05, fmt(W)], [-0
 // ------------------------------------------------------------------ Schleife
 function resize() {                                         // Hochformat: genug Breite sehen (waagrecht ca. 64°)
   const w = innerWidth, h = innerHeight, a = w / h; renderer.setSize(w, h, false); if (typeof composer !== 'undefined') { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } camera.aspect = a;
-  camera.fov = Math.min(100, Math.max(64, 2 * Math.atan(Math.tan(32 * Math.PI / 180) / a) * 180 / Math.PI)); camera.updateProjectionMatrix(); req();
+  camera.fov = Math.min(86, Math.max(64, 2 * Math.atan(Math.tan(32 * Math.PI / 180) / a) * 180 / Math.PI)); camera.updateProjectionMatrix(); req();   // Hochformat: max. 86° (weniger Verzerrung)
 }
 // ------------------------------------------------------------------ Nachbearbeitung (realistischer: Kontaktschatten, Leuchten, Kamera-Look)
 const DPR = Math.min(devicePixelRatio || 1, 2);
