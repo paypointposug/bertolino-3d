@@ -503,7 +503,6 @@ function cyl(r0, r1, h, x, y, z, mat, seg = 24) { return addF(new THREE.Mesh(new
   bowl(0.52, y1, [0.75, 0.72, 0.62]); bowl(0.68, y1, [0.36, 0.48, 0.32]); bowl(0.68, y1 + 0.072, [0.75, 0.72, 0.62], 0.058);
   // Matchabesen (Chasen) auf Halter
   { const x = 0.86, e = [0.68, 0.56, 0.36]; cyl(0.022, 0.03, 0.045, x, top(y1), L - 0.1, mk(x, y1, [0.85, 0.84, 0.8])); const g = new THREE.CylinderGeometry(0.028, 0.012, 0.06, 20, 1, true).translate(x, top(y1) + 0.075, L - 0.1); addF(new THREE.Mesh(g, mk(x, y1, e)), 'C'); cyl(0.012, 0.012, 0.05, x, top(y1) + 0.105, L - 0.1, mk(x, y1, e)); }
-  cyl(0.04, 0.045, 0.13, 1.06, top(y1), L - 0.1, mk(1.06, y1, [0.86, 0.86, 0.84]));        // Vorratsglas
 }
 
 // --- Bilderrahmen RÖDALM (Menü an Wand C, Matcha-Bild an Wand D)
@@ -639,6 +638,71 @@ plant(W - 0.15, 3.48, S.SHELF.y, 'palm', 0.42, 5, 'B', 0.06, 0.11);    // Areca 
 plant(W - 0.15, 1.56, S.SHELF.y, 'round', 0.3, 6, 'B', 0.06, 0.11);    // Monstera auf der Stehbar
 plant(1.08, L - 0.1, S.SHELVES[1] + 0.025, 'grass', 0.22, 7, 'C', 0.045, 0.08);  // Gras oben im Regal
 
+// --- mehr Deko an den Wänden: Bildergalerie über der Stehbar, Bilder an Wand A und C, 2 Regale an Wand D
+function mistyTex(seed) {
+  const t = new THREE.CanvasTexture(cnv(500, 700, (g, w, h) => {
+    paper(g, w, h); const r = rnd(seed), sunX = w * (0.25 + r() * 0.5), sunY = h * (0.22 + r() * 0.12);
+    g.fillStyle = seed % 2 ? 'rgba(196,120,96,0.55)' : 'rgba(120,150,96,0.45)'; g.beginPath(); g.arc(sunX, sunY, 34 + r() * 16, 0, 6.3); g.fill();
+    for (let k = 0; k < 5; k++) {                              // Bergketten, hinten hell, vorne dunkel, mit Nebel
+      const base = h * (0.42 + k * 0.1), a = 0.16 + k * 0.15, col = `rgba(${70 - k * 8},${84 - k * 6},${72 - k * 8},${a})`;
+      g.fillStyle = col; g.beginPath(); g.moveTo(0, h); let y = base - r() * 60; g.lineTo(0, y);
+      for (let x = 0; x <= w; x += 10) { y += (r() - 0.5) * 26 + Math.sin(x / (60 + k * 20) + seed) * 3; y = Math.min(base + 40, Math.max(base - 140 + k * 10, y)); g.lineTo(x, y); }
+      g.lineTo(w, h); g.closePath(); g.fill();
+      const fg = g.createLinearGradient(0, base - 10, 0, base + 70); fg.addColorStop(0, 'rgba(243,239,228,0)'); fg.addColorStop(1, 'rgba(243,239,228,0.85)'); g.fillStyle = fg; g.fillRect(0, base - 10, w, 80);
+    }
+    g.fillStyle = 'rgba(47,59,42,0.55)'; g.font = '500 13px Inter, sans-serif'; g.letterSpacing = '5px'; g.textAlign = 'center'; g.fillText('MISTY MORNING', w / 2, h - 34); g.letterSpacing = '0px';
+  })); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+[1.92, 2.52, 3.12].forEach((zc, i) => frameOn('wallB_b', 'B', 'x', W, -1, zc - 0.25, zc + 0.25, 1.30, 2.00, mistyTex(31 + i)));   // Galerie über der Stehbar
+frameOn('wallA_r', 'A', 'z', 0, +1, 3.86, 4.36, 1.12, 1.82, mistyTex(41));                                                    // neben der Fensternische
+frameOn('wallC', 'C', 'z', L, -1, 3.78, 4.28, 1.12, 1.82, mistyTex(52));                                                       // grüne Wand, neben dem Kasten
+// Hängepflanze (FEJKA hängend): Topf + Ranken, die über die Kante nach unten fallen
+function trailing(x, y0, z, out, seed, wall, e) {
+  const r = rnd(seed), P = [], U = [], Cc = [], potR = 0.05, potH = 0.085;
+  const leaf = (cx, cy, cz, len, wid, yaw, pitch) => {
+    const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+    const v = [[-wid / 2, 0], [wid / 2, 0], [wid / 2, len], [-wid / 2, len]].map(([a, b]) => new THREE.Vector3(a, b, 0).applyMatrix4(m).add(new THREE.Vector3(cx, cy, cz)));
+    const k = 0.75 + r() * 0.35;
+    for (const i of [0, 1, 2, 0, 2, 3]) { P.push(v[i].x, v[i].y, v[i].z); U.push(i === 1 || i === 2 ? 1 : 0, i >= 2 ? 1 : 0); Cc.push(k * 0.95, k, k * 0.9); }
+  };
+  for (let v = 0; v < 9; v++) {
+    const side = (r() - 0.5) * 2, lenV = 0.18 + r() * 0.42, sx = out[0] === 0 ? side * 0.07 : 0, sz = out[2] === 0 ? side * 0.07 : 0;
+    for (let t = 0; t < 1; t += 0.05) {
+      const reach = Math.min(1, t * 4) * 0.07, drop = Math.max(0, t - 0.2) * lenV * 1.25 - Math.min(t, 0.2) * -0.04;
+      const px = x + out[0] * reach + sx * (0.6 + t * 0.4), pz = z + out[2] * reach + sz * (0.6 + t * 0.4), py = y0 + potH + 0.01 - drop;
+      leaf(px + (r() - 0.5) * 0.02, py, pz + (r() - 0.5) * 0.02, 0.045, 0.035, r() * 6.28, -0.3 - r() * 1.2);
+    }
+  }
+  for (let i = 0; i < 18; i++) { const a = r() * 6.28; leaf(x + Math.cos(a) * 0.03, y0 + potH, z + Math.sin(a) * 0.03, 0.05, 0.04, -Math.PI / 2 - a, -0.5 - r() * 0.6); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3));
+  addF(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: LEAF.fig, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true, color: lin(0.14 * e[0] * 1.3, 0.29 * e[1] * 1.3, 0.09 * e[2] * 1.3) })), wall);
+  addF(new THREE.Mesh(shadeVC(new THREE.CylinderGeometry(potR, potR * 0.82, potH, 24).translate(x, y0 + potH / 2, z), roundK(0.5, 0.95)), new THREE.MeshBasicMaterial({ color: lin(0.8 * e[0], 0.78 * e[1], 0.74 * e[2]), vertexColors: true })), wall);
+}
+{
+  const eC = eAt('m_sh0_y1', [1.06, S.SHELVES[0], L - 0.1]);
+  trailing(1.07, S.SHELVES[0] + 0.025, L - 0.1, [0, 0, -1], 61, 'C', eC);
+  // zwei Regale an Wand D (zwischen Lamellen und Bogenwand)
+  const z0 = 3.55, z1 = 4.35, shelfM = bakedMat(lin(0.86, 0.86, 0.85), null, { vertexColors: true });
+  for (const [k, y] of [[0, 1.42], [1, 1.82]]) {
+    addF(new THREE.Mesh(shadeVC(hostUV(boxG(0, 0.2, y, y + 0.025, z0, z1), 'wallD'), faceK(1, 0, 1.15, 0.45, 0.7, 0.6)), shelfM), 'D');
+    for (const z of [z0 + 0.12, z1 - 0.12]) {
+      const sh = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0.18, 0), new THREE.Vector2(0.17, -0.03), new THREE.Vector2(0.03, -0.15), new THREE.Vector2(0, -0.17)]);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: 0.018, bevelEnabled: false }); g.translate(0, y, z - 0.009);
+      addF(new THREE.Mesh(g, litMat('wallD', [0.01, y - 0.08, z], [0.68, 0.58, 0.44])), 'D');
+    }
+    const e = eAt('wallD', [0, y + 0.2, (z0 + z1) / 2]).map(v => v * 1.15), top = y + 0.025;
+    const mm = (alb) => new THREE.MeshBasicMaterial({ color: lin(alb[0] * e[0], alb[1] * e[1], alb[2] * e[2]), vertexColors: true });
+    trailing(0.1, top, k ? 3.7 : 4.15, [1, 0, 0], 70 + k, 'D', e);
+    if (k) { for (const [z, alb, h] of [[3.95, [0.22, 0.36, 0.14], 0.11], [4.04, [0.8, 0.78, 0.72], 0.11], [4.13, [0.05, 0.05, 0.05], 0.09]]) addF(new THREE.Mesh(shadeVC(new THREE.CylinderGeometry(0.036, 0.036, h, 24).translate(0.1, top + h / 2, z), roundK(0.55, 1)), mm(alb)), 'D'); }
+    else {
+      const pts = [[0.001, 0], [0.03, 0], [0.034, 0.008], [0.058, 0.03], [0.065, 0.07], [0.058, 0.07], [0.048, 0.035], [0.001, 0.012]].map(([a, b]) => new THREE.Vector2(a, b));
+      addF(new THREE.Mesh(shadeVC(new THREE.LatheGeometry(pts, 28).translate(0.1, top, 3.72), roundK(0.5, 1)), mm([0.36, 0.48, 0.32])), 'D');
+      addF(new THREE.Mesh(shadeVC(new THREE.CylinderGeometry(0.03, 0.045, 0.16, 24).translate(0.1, top + 0.08, 3.86), roundK(0.5, 1)), mm([0.75, 0.72, 0.62])), 'D');   // Vase
+      for (let b = 0; b < 3; b++) addF(new THREE.Mesh(boxG(0.03, 0.18, top + b * 0.028, top + b * 0.028 + 0.026, 3.9 + b * 0.004, 4.12 - b * 0.006), mm([[0.85, 0.83, 0.78], [0.3, 0.42, 0.28], [0.12, 0.12, 0.12]][b])), 'D');   // Bücher
+    }
+  }
+}
+
 // --- Barhocker DALFRED (schwarz, 63–74 cm) an der Stehbar
 {
   const g = [];
@@ -667,8 +731,9 @@ const LIST = [
   ['Wände', [
     [1, 'Wandfarbe Pastellgrün 2,5 l (Wand mit Bogen)', 39.99, 'OBI', 'https://www.obi.de/p/5376520/alpina-feine-farben-no-38-essenz-der-natur-pastellgruen-edelmatt-2-5-l'],
     [3, 'Akustikpaneel Eiche 267×57 cm (lange Wand)', 44.28, 'Hornbach', 'https://www.hornbach.de/p/akustikpaneel-eiche-einseitig-foliert-2670-x-572-x-19-mm/12382963/'],
-    [2, 'BERGSHULT / SANDSHULT Wandregal 80×20 cm', 15.99, 'IKEA', 'https://www.ikea.com/de/en/p/bergshult-sandshult-wall-shelf-white-aspen-s29326041'],
-    [2, 'RÖDALM Rahmen 50×70 cm, weiß (Karte + Bild)', 15.99, 'IKEA', 'https://www.ikea.com/de/en/p/roedalm-frame-white-90548929/'],
+    [4, 'BERGSHULT / SANDSHULT Wandregal 80×20 cm', 15.99, 'IKEA', 'https://www.ikea.com/de/en/p/bergshult-sandshult-wall-shelf-white-aspen-s29326041'],
+    [7, 'RÖDALM Rahmen 50×70 cm, weiß (Karte + 6 Bilder)', 15.99, 'IKEA', 'https://www.ikea.com/de/en/p/roedalm-frame-white-90548929/'],
+    [3, 'BILD Poster „misty morning“ 50×70 cm (2er-Pack)', 12.99, 'IKEA', 'https://www.ikea.com/de/en/p/bild-poster-misty-morning-30533515'],
     [1, 'Noren (japanischer Türvorhang) 80×130 mit Stange', 29.90, 'eBay', 'https://www.ebay.de/shop/noren'],
   ]],
   ['Pflanzen', [
@@ -677,6 +742,7 @@ const LIST = [
     [1, 'FEJKA Areca-Palme 12 cm', 14.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
     [1, 'FEJKA Monstera 12 cm', 9.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
     [1, 'FEJKA Gras 9 cm', 7.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
+    [3, 'FEJKA Hängepflanze 9 cm (für die Regale)', 3.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
   ]],
 ];
 const BUDGET = 1500;
