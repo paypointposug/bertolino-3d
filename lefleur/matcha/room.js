@@ -454,45 +454,67 @@ addF(slats('m_pan_x1', { n: 'x', c: S.PAN.x1, s: +1 }, S.PAN.z0, S.PAN.z1, 0.0, 
   addF(new THREE.Mesh(boxG(xm - 0.004, xm + 0.004, Cu.y0 + 0.004, Cu.y1 + 0.0015, Cu.z0, Cu.z1 + 0.0015), sMat));
 }
 
-// --- weiße Tulpentische (bleiben) und Stühle LISABO Esche
-function tulip(cx, cz, rTop, yTop, host, rBase) {
-  const top = new THREE.CylinderGeometry(rTop, rTop - 0.004, 0.02, 72).translate(cx, yTop - 0.01, cz);
-  addF(new THREE.Mesh(shadeVC(hostUV(top, host), (nx, ny) => ny > 0.6 ? 1 : ny < -0.6 ? 0.45 : 0.72), bakedMat(lin(0.84, 0.84, 0.83), null, { vertexColors: true })));
-  const pts = [[0.001, 0], [rBase, 0], [rBase, 0.01], [rBase * 0.7, 0.022], [rBase * 0.25, 0.06], [0.036, 0.14], [0.03, 0.32], [0.034, yTop - 0.16], [0.07, yTop - 0.05], [0.12, yTop - 0.022], [0.12, yTop - 0.02]].map(([r, y]) => new THREE.Vector2(r, y));
-  const ped = new THREE.LatheGeometry(pts, 40).translate(cx, 0, cz);
-  const e = eAt('floor', [cx + rTop + 0.2, 0, cz]);
-  addF(new THREE.Mesh(shadeVC(ped, (nx, ny, nz, x, y) => (ny > 0.6 ? 0.85 : ny < -0.6 ? 0.35 : 0.62 + 0.18 * (nx * 0.4 - nz * 0.6)) * (0.5 + 0.5 * sm(0, yTop * 0.8, y))),
-    new THREE.MeshBasicMaterial({ color: lin(0.84 * e[0], 0.84 * e[1], 0.83 * e[2]), vertexColors: true })));
-  const sh = new THREE.Mesh(new THREE.CircleGeometry(rBase + 0.06, 40).rotateX(-Math.PI / 2).translate(cx, 0.0015, cz), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.55, color: 0x000000 }));
-  addF(sh);
-}
+// --- Tische und Stühle, die der Kunde schon hat: weiße runde Tische + weiße Schalenstühle, beide mit Holzbeinen
 const blobTex = new THREE.CanvasTexture(cnv(128, 128, (g, w, h) => { const gr = g.createRadialGradient(64, 64, 10, 64, 64, 64); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }));
-S.TSMALL.forEach(([x, z], i) => tulip(x, z, 0.30, 0.74, `m_t${i}_y1`, 0.21));
-tulip(S.TBIG[0], S.TBIG[1], 0.45, 0.75, 'm_tb_y1', 0.27);
-
-function chairGeo() {
-  const g = [], tilt = (geo, ax, az, y0) => { geo.translate(0, -y0, 0); geo.applyMatrix4(new THREE.Matrix4().makeShear(0, 0, ax, 0, az, 0)); geo.translate(0, y0, 0); return geo; };
-  g.push(boxG(-0.22, 0.22, 0.43, 0.45, -0.195, 0.195));                                  // Sitz (Esche-Furnier)
-  for (const [a, b, c, d] of [[-0.2, 0.2, -0.17, -0.155], [-0.2, 0.2, 0.155, 0.17]]) g.push(boxG(a, b, 0.39, 0.43, c, d));   // Zargen
-  for (const x of [-0.2, 0.185]) g.push(boxG(x, x + 0.015, 0.39, 0.43, -0.16, 0.16));
-  for (const sx of [-1, 1]) {
-    g.push(tilt(boxG(sx * 0.195 - 0.016, sx * 0.195 + 0.016, 0, 0.43, 0.15, 0.18), 0, 0.05, 0.43));       // Vorderbeine
-    g.push(tilt(boxG(sx * 0.195 - 0.016, sx * 0.195 + 0.016, 0, 0.80, -0.185, -0.155), 0, -0.07, 0.43)); // Hinterbeine bis Lehne
-  }
-  const back = new THREE.CylinderGeometry(0.5, 0.5, 0.12, 18, 1, true, Math.PI - 0.44, 0.88); back.translate(0, 0.72, 0.5 - 0.2); g.push(back);
-  const back2 = new THREE.CylinderGeometry(0.488, 0.488, 0.12, 18, 1, true, Math.PI - 0.44, 0.88); back2.translate(0, 0.72, 0.5 - 0.2); g.push(back2);
-  return shadeVC(mergeGeos(g), (nx, ny, nz, x, y) => (ny > 0.6 ? 1.0 : ny < -0.6 ? 0.4 : 0.66 + 0.18 * Math.abs(nz)) * (0.5 + 0.5 * sm(0, 0.4, y)));
-}
-const CHG = chairGeo();
-const chairTex = tex(cnv(256, 1024, (g, w, h) => {                 // Esche hell, feine Maserung
-  const r = rnd(44); g.fillStyle = 'rgb(222,202,170)'; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < 70; i++) { const x = r() * w, a = 0.05 + r() * 0.1; g.strokeStyle = r() < 0.6 ? `rgba(140,104,66,${a})` : `rgba(240,222,190,${a})`; g.lineWidth = 1 + r() * 2.5; g.beginPath(); let xx = x; g.moveTo(xx, 0); for (let y = 0; y <= h; y += 24) { xx += (r() - 0.5) * 2; g.lineTo(xx, y); } g.stroke(); }
+const legTex = tex(cnv(256, 1024, (g, w, h) => {                  // Buche/Eiche hell, Maserung längs
+  const r = rnd(44); g.fillStyle = 'rgb(196,150,104)'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 80; i++) { const x = r() * w, a = 0.06 + r() * 0.12; g.strokeStyle = r() < 0.6 ? `rgba(120,80,46,${a})` : `rgba(232,200,160,${a})`; g.lineWidth = 1 + r() * 2.5; g.beginPath(); let xx = x; g.moveTo(xx, 0); for (let y = 0; y <= h; y += 24) { xx += (r() - 0.5) * 2; g.lineTo(xx, y); } g.stroke(); }
 }), 1, 1);
-S.CHAIRS.forEach(([x, z], i) => {
-  const e = eAt(`m_c${i}_y1`, [x, 0.45, z]);
-  const m = new THREE.Mesh(CHG, new THREE.MeshBasicMaterial({ map: chairTex, color: lin(0.8 * e[0], 0.72 * e[1], 0.6 * e[2]), vertexColors: true, side: THREE.DoubleSide }));
-  m.rotation.y = S.CHAIRS[i][2]; m.position.set(x, 0, z); addF(m);
-  addF(new THREE.Mesh(new THREE.CircleGeometry(0.33, 32).rotateX(-Math.PI / 2).translate(x, 0.0012, z), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.35, color: 0x000000 })));
+function rod(a, b, r0, r1, seg = 12) {                            // Stab von Punkt a nach b (unten dicker)
+  const d = new THREE.Vector3().subVectors(b, a), len = d.length();
+  const g = new THREE.CylinderGeometry(r1, r0, len, seg); g.translate(0, len / 2, 0);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize())); g.translate(a.x, a.y, a.z); return g;
+}
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const woodK = (nx, ny, nz, x, y) => (0.62 + 0.3 * Math.max(0, nx * 0.5 - nz * 0.6 + 0.3)) * (0.55 + 0.45 * sm(0, 0.45, y));
+function table(cx, cz, rTop, yTop, host, spread) {
+  const top = new THREE.CylinderGeometry(rTop, rTop - 0.003, 0.02, 72).translate(cx, yTop - 0.01, cz);
+  addF(new THREE.Mesh(shadeVC(hostUV(top, host), (nx, ny) => ny > 0.6 ? 1 : ny < -0.6 ? 0.45 : 0.74), bakedMat(lin(0.86, 0.86, 0.85), null, { vertexColors: true })));
+  const e = eAt('floor', [cx + rTop + 0.2, 0, cz]), legs = [], ru = rTop * 0.42, rf = rTop * 0.42 + spread;
+  for (let k = 0; k < 4; k++) { const a = Math.PI / 4 + k * Math.PI / 2, c = Math.cos(a), s = Math.sin(a); legs.push(rod(V(cx + c * rf, 0, cz + s * rf), V(cx + c * ru, yTop - 0.03, cz + s * ru), 0.016, 0.021)); }
+  addF(new THREE.Mesh(shadeVC(mergeGeos(legs), woodK), new THREE.MeshBasicMaterial({ map: legTex, color: lin(0.95 * e[0], 0.9 * e[1], 0.85 * e[2]), vertexColors: true })));
+  const sp = [];                                                   // dunkles Metallkreuz unter der Platte
+  for (let k = 0; k < 2; k++) { const a = Math.PI / 4 + k * Math.PI / 2; sp.push(rod(V(cx - Math.cos(a) * ru, yTop - 0.045, cz - Math.sin(a) * ru), V(cx + Math.cos(a) * ru, yTop - 0.045, cz + Math.sin(a) * ru), 0.007, 0.007, 6)); }
+  addF(new THREE.Mesh(mergeGeos(sp), new THREE.MeshBasicMaterial({ color: lin(0.05 * e[0], 0.05 * e[1], 0.05 * e[2]) })));
+  addF(new THREE.Mesh(new THREE.CircleGeometry(rf + 0.12, 40).rotateX(-Math.PI / 2).translate(cx, 0.0015, cz), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.45, color: 0x000000 })));
+}
+S.TSMALL.forEach(([x, z], i) => table(x, z, 0.30, 0.74, `m_t${i}_y1`, 0.12));
+table(S.TBIG[0], S.TBIG[1], 0.45, 0.75, 'm_tb_y1', 0.14);
+
+// Schalenstuhl (weiß, Sitzkissen, Holzbeine) – Vorderseite zeigt nach +z
+function shellGeos() {
+  const prof = new THREE.CatmullRomCurve3([V(0, 0.432, 0.222), V(0, 0.452, 0.19), V(0, 0.445, 0.05), V(0, 0.452, -0.1), V(0, 0.49, -0.185), V(0, 0.6, -0.225), V(0, 0.72, -0.245), V(0, 0.835, -0.262)]);
+  const NU = 22, NV = 40, P = [], idx = [];
+  const halfW = (v) => v < 0.35 ? 0.228 - v * 0.04 : v < 0.55 ? 0.214 : 0.214 + (v - 0.55) * 0.02;
+  for (let j = 0; j <= NV; j++) {
+    const v = j / NV, p = prof.getPoint(v), t = prof.getTangent(v), n = V(0, -t.z, t.y).normalize();   // n zeigt nach oben bzw. nach vorne
+    if (n.y < -0.1 || n.z < -0.5) n.negate();
+    for (let i = 0; i <= NU; i++) {
+      const sx = i / NU * 2 - 1, curl = 0.04 * Math.pow(Math.abs(sx), 3) * (v < 0.4 ? 0.8 : 1.15);
+      P.push(sx * halfW(v), p.y + n.y * curl, p.z + n.z * curl);
+    }
+  }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + 1, c = a + NU + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+  const shell = new THREE.BufferGeometry(); shell.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); shell.setIndex(idx); shell.computeVertexNormals();
+  const sh = new THREE.Shape(); const w = 0.18, d = 0.17, rr = 0.06;
+  sh.moveTo(-w + rr, -d); sh.lineTo(w - rr, -d); sh.quadraticCurveTo(w, -d, w, -d + rr); sh.lineTo(w, d - rr); sh.quadraticCurveTo(w, d, w - rr, d); sh.lineTo(-w + rr, d); sh.quadraticCurveTo(-w, d, -w, d - rr); sh.lineTo(-w, -d + rr); sh.quadraticCurveTo(-w, -d, -w + rr, -d);
+  const cush = new THREE.ExtrudeGeometry(sh, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.009, bevelSize: 0.012, bevelSegments: 3, curveSegments: 10 });
+  cush.rotateX(-Math.PI / 2); cush.translate(0, 0.462, 0.02); cush.deleteAttribute('uv');
+  const white = mergeGeos([shell.toNonIndexed(), cush.toNonIndexed()]);
+  shadeVC(white, (nx, ny, nz, x, y) => { const k = Math.abs(ny) > 0.6 ? 1.0 : 0.72 + 0.2 * Math.abs(nz); return k * (y > 0.5 ? 0.97 : 1.0); });
+  const legs = [], plate = boxG(-0.12, 0.12, 0.418, 0.43, -0.11, 0.11);
+  for (const [sx, sz] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) legs.push(rod(V(sx * 0.235, 0, sz * 0.22), V(sx * 0.15, 0.425, sz * 0.13), 0.013, 0.017));
+  for (const sx of [-1, 1]) legs.push(rod(V(sx * 0.2, 0.24, 0.18), V(sx * 0.2, 0.24, -0.18), 0.008, 0.008, 8));   // Querstreben
+  return { white, legs: shadeVC(mergeGeos(legs), woodK), plate: shadeVC(plate, () => 0.5) };
+}
+const SG = shellGeos();
+S.CHAIRS.forEach(([x, z, yaw], i) => {
+  const e = eAt(`m_c${i}_y1`, [x, 0.45, z]), grp = new THREE.Group();
+  grp.add(new THREE.Mesh(SG.white, new THREE.MeshBasicMaterial({ color: lin(0.9 * e[0], 0.9 * e[1], 0.89 * e[2]), vertexColors: true, side: THREE.DoubleSide })));
+  grp.add(new THREE.Mesh(SG.legs, new THREE.MeshBasicMaterial({ map: legTex, color: lin(0.95 * e[0], 0.9 * e[1], 0.85 * e[2]), vertexColors: true })));
+  grp.add(new THREE.Mesh(SG.plate, new THREE.MeshBasicMaterial({ color: lin(0.1 * e[0], 0.1 * e[1], 0.1 * e[2]), vertexColors: true })));
+  grp.rotation.y = yaw; grp.position.set(x, 0, z); addF(grp);
+  addF(new THREE.Mesh(new THREE.CircleGeometry(0.34, 32).rotateX(-Math.PI / 2).translate(x, 0.0012, z), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.35, color: 0x000000 })));
 });
 
 // --- Regalträger (Espe) und Deko auf den Regalen an Wand C
