@@ -719,46 +719,24 @@ function trailing(x, y0, z, out, seed, wall, e) {
 }
 FURN.visible = LOOK === 'matcha';
 
-// ------------------------------------------------------------------ Einkaufsliste (geprüfte Preise, Stand 24.11.2026)
-const LIST = [
-  ['Licht', [[4, 'SINNERLIG Hängeleuchte Bambus Ø 27 cm', 29.99, 'IKEA', 'https://www.ikea.com/de/en/p/sinnerlig-pendant-lamp-bamboo-handmade-00508536/']]],
-  ['Sitzen', [
-    [3, 'STEGESUND Bank Bambus 79×34 cm (Fensternische)', 49.99, 'IKEA', 'https://www.ikea.com/de/en/cat/benches-700319/'],
-    [2, 'Bankauflage beige 40×120 cm', 29.95, 'Kaufland', 'https://www.kaufland.de/product/497721620/'],
-    [8, 'LISABO Stuhl Esche (gerade im Angebot, sonst 69,99 €)', 39.99, 'IKEA', 'https://www.ikea.com/de/en/p/lisabo-chair-ash-00457235/'],
-    [3, 'DALFRED Barhocker schwarz, 63–74 cm (Stehbar)', 49.99, 'IKEA', 'https://www.ikea.com/de/en/cat/bar-stools-chairs-20864/f/black-bar-stools-chairs-f-colors--10139/'],
-  ]],
-  ['Wände', [
-    [1, 'Wandfarbe Pastellgrün 2,5 l (Wand mit Bogen)', 39.99, 'OBI', 'https://www.obi.de/p/5376520/alpina-feine-farben-no-38-essenz-der-natur-pastellgruen-edelmatt-2-5-l'],
-    [3, 'Akustikpaneel Eiche 267×57 cm (lange Wand)', 44.28, 'Hornbach', 'https://www.hornbach.de/p/akustikpaneel-eiche-einseitig-foliert-2670-x-572-x-19-mm/12382963/'],
-    [4, 'BERGSHULT / SANDSHULT Wandregal 80×20 cm', 15.99, 'IKEA', 'https://www.ikea.com/de/en/p/bergshult-sandshult-wall-shelf-white-aspen-s29326041'],
-    [7, 'RÖDALM Rahmen 50×70 cm, weiß (Karte + 6 Bilder)', 15.99, 'IKEA', 'https://www.ikea.com/de/en/p/roedalm-frame-white-90548929/'],
-    [3, 'BILD Poster „misty morning“ 50×70 cm (2er-Pack)', 12.99, 'IKEA', 'https://www.ikea.com/de/en/p/bild-poster-misty-morning-30533515'],
-    [1, 'Noren (japanischer Türvorhang) 80×130 mit Stange', 29.90, 'eBay', 'https://www.ebay.de/shop/noren'],
-  ]],
-  ['Pflanzen', [
-    [1, 'FEJKA Birkenfeige (groß)', 49.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
-    [1, 'FEJKA Paradiesvogelblume (groß)', 49.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
-    [1, 'FEJKA Areca-Palme 12 cm', 14.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
-    [1, 'FEJKA Monstera 12 cm', 9.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
-    [1, 'FEJKA Gras 9 cm', 7.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
-    [3, 'FEJKA Hängepflanze 9 cm (für die Regale)', 3.99, 'IKEA', 'https://www.ikea.com/de/en/cat/fejka-series-700612/'],
-  ]],
-];
-const BUDGET = 1500;
+// ------------------------------------------------------------------ Einkaufsliste – nur intern: liste.json liegt nur im Artifact, nicht auf der Website
 const eur = (v) => v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-const TOTAL = Math.round(LIST.reduce((s, [, rows]) => s + rows.reduce((a, [n, , p]) => a + n * p, 0), 0) * 100) / 100;
-{
-  const el = document.getElementById('sheetBody'); let h = '';
-  for (const [grp, rows] of LIST) {
+fetch('liste.json' + VQ).then(r => r.ok ? r.json() : null).then(J => {
+  if (!J || !J.groups) return;
+  const total = Math.round(J.groups.reduce((s, [, rows]) => s + rows.reduce((a, [n, , p]) => a + n * p, 0), 0) * 100) / 100;
+  let h = '';
+  for (const [grp, rows] of J.groups) {
     h += `<h3>${grp}</h3>`;
     for (const [n, name, p, shop, url] of rows) h += `<div class="row"><span class="n">${n}×</span><span class="nm">${name}<a href="${url}" target="_blank" rel="noopener">${shop}</a></span><span class="p">${eur(n * p)}</span></div>`;
   }
-  el.innerHTML = h;
-  document.getElementById('sum').textContent = eur(TOTAL);
-  document.getElementById('rest').textContent = eur(BUDGET - TOTAL);
-  document.getElementById('listSum').textContent = eur(TOTAL);
-}
+  document.getElementById('sheetBody').innerHTML = h;
+  document.getElementById('sheetSub').textContent = J.sub;
+  document.getElementById('sheetNote').textContent = J.note;
+  document.getElementById('sum').textContent = eur(total);
+  document.getElementById('rest').textContent = eur(J.budget - total);
+  document.getElementById('listSum').textContent = eur(total);
+  document.body.classList.add('haslist');
+}).catch(e => console.warn('Liste:', e && e.message));
 
 // ------------------------------------------------------------------ Steuerung
 const st = { x: W / 2, z: L - 0.9, yaw: 0, pitch: -0.05, mode: 'walk', orbit: { th: 0.75, ph: 0.9, r: 8.2 } };

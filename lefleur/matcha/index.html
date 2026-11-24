@@ -41,7 +41,7 @@ body.ready #load{opacity:0;pointer-events:none}
 #look button[data-l=matcha].on{background:#5f7d45;color:#fff}
 #listBtn{position:fixed;left:max(14px,env(safe-area-inset-left));top:calc(max(14px,env(safe-area-inset-top)) + 70px);display:none;font:600 13.5px/1 Inter,system-ui,sans-serif;color:var(--ink);background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:12px;min-height:40px;padding:0 13px;cursor:pointer;box-shadow:0 6px 24px rgba(0,0,0,.06)}
 #listBtn b{color:#4b6636}
-body.matcha #listBtn{display:block}
+body.matcha.haslist #listBtn{display:block}
 #sheet{position:fixed;right:max(14px,env(safe-area-inset-right));top:calc(max(14px,env(safe-area-inset-top)) + 58px);bottom:calc(max(16px,env(safe-area-inset-bottom)) + 66px);width:min(400px,calc(100vw - 28px));background:rgba(255,255,255,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.14);display:none;flex-direction:column;overflow:hidden;touch-action:pan-y;user-select:text;-webkit-user-select:text}
 #sheet.open{display:flex}
 #sheet header{padding:14px 16px 10px;border-bottom:1px solid var(--line);position:relative}
@@ -68,10 +68,10 @@ body.matcha #listBtn{display:block}
 <div id="look" role="group" aria-label="Ansicht"><button data-l="leer">Jetzt</button><button data-l="matcha" class="on">Matcha-Laden</button></div>
 <button id="listBtn" type="button">Einkaufsliste · <b id="listSum"></b></button>
 <aside id="sheet" aria-label="Einkaufsliste">
-  <header><b>Einkaufsliste Gastraum</b><span>Budget 1.500 € · Möbel, Licht, Deko – ohne Maschinen</span><button id="sheetX" type="button" aria-label="Schließen">×</button></header>
+  <header><b>Einkaufsliste Gastraum</b><span id="sheetSub"></span><button id="sheetX" type="button" aria-label="Schließen">×</button></header>
   <div id="sheetBody"></div>
   <footer><div class="tot"><span>Summe</span><span id="sum"></span></div><div class="r"><span>Rest vom Budget</span><span id="rest"></span></div>
-  <p>Die weißen Tische bleiben. Den Rest z. B. für den Elektriker (4 Lampen an der Decke anschließen), Glühbirnen, Schrauben und Farbrolle. Preise geprüft am 24.11.2026 – können sich ändern.</p></footer>
+  <p id="sheetNote"></p></footer>
 </aside>
 <div id="note">Maße geschätzt</div>
 <nav id="views" aria-label="Ansichten">
@@ -84,6 +84,6 @@ body.matcha #listBtn{display:block}
 <div id="hint"><span class="t"></span></div>
 <div id="joy"><i></i></div>
 <div id="load">Raum wird geladen …</div>
-<script type="module" src="room.js?v=20261124m3"></script>
+<script type="module" src="room.js?v=20261124m5"></script>
 </body>
 </html>
