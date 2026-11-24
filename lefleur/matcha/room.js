@@ -1,5 +1,11 @@
 // Le Fleur – Raum in 3D. Licht vorberechnet (bake.py → lightmap.png), alles andere hier.
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js';
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 const qs = new URLSearchParams(location.search);
 const VQ = (() => { try { return new URL(import.meta.url).search || ''; } catch (e) { return ''; } })();   // ?v=… gegen alte Zwischenspeicher
@@ -17,7 +23,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPrefere
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NeutralToneMapping;
-renderer.toneMappingExposure = +(qs.get('tm') || 1.0);
+renderer.toneMappingExposure = +(qs.get('tm') || 1.06);
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0xeceeed);
 const camera = new THREE.PerspectiveCamera(72, 1, 0.03, 80);
 let needRender = true; const req = () => { needRender = true; };
@@ -478,9 +484,13 @@ function chairGeo() {
   return shadeVC(mergeGeos(g), (nx, ny, nz, x, y) => (ny > 0.6 ? 1.0 : ny < -0.6 ? 0.4 : 0.66 + 0.18 * Math.abs(nz)) * (0.5 + 0.5 * sm(0, 0.4, y)));
 }
 const CHG = chairGeo();
+const chairTex = tex(cnv(256, 1024, (g, w, h) => {                 // Esche hell, feine Maserung
+  const r = rnd(44); g.fillStyle = 'rgb(222,202,170)'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 70; i++) { const x = r() * w, a = 0.05 + r() * 0.1; g.strokeStyle = r() < 0.6 ? `rgba(140,104,66,${a})` : `rgba(240,222,190,${a})`; g.lineWidth = 1 + r() * 2.5; g.beginPath(); let xx = x; g.moveTo(xx, 0); for (let y = 0; y <= h; y += 24) { xx += (r() - 0.5) * 2; g.lineTo(xx, y); } g.stroke(); }
+}), 1, 1);
 S.CHAIRS.forEach(([x, z], i) => {
   const e = eAt(`m_c${i}_y1`, [x, 0.45, z]);
-  const m = new THREE.Mesh(CHG, new THREE.MeshBasicMaterial({ color: lin(0.66 * e[0], 0.49 * e[1], 0.29 * e[2]), vertexColors: true, side: THREE.DoubleSide }));
+  const m = new THREE.Mesh(CHG, new THREE.MeshBasicMaterial({ map: chairTex, color: lin(0.8 * e[0], 0.72 * e[1], 0.6 * e[2]), vertexColors: true, side: THREE.DoubleSide }));
   m.rotation.y = S.CHAIRS[i][2]; m.position.set(x, 0, z); addF(m);
   addF(new THREE.Mesh(new THREE.CircleGeometry(0.33, 32).rotateX(-Math.PI / 2).translate(x, 0.0012, z), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.35, color: 0x000000 })));
 });
@@ -842,15 +852,44 @@ const dims = [[W / 2, 0.02, -0.05, fmt(W)], [W / 2, 0.02, L + 0.05, fmt(W)], [-0
 
 // ------------------------------------------------------------------ Schleife
 function resize() {                                         // Hochformat: genug Breite sehen (waagrecht ca. 64°)
-  const w = innerWidth, h = innerHeight, a = w / h; renderer.setSize(w, h, false); camera.aspect = a;
+  const w = innerWidth, h = innerHeight, a = w / h; renderer.setSize(w, h, false); if (typeof composer !== 'undefined') { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); } camera.aspect = a;
   camera.fov = Math.min(100, Math.max(64, 2 * Math.atan(Math.tan(32 * Math.PI / 180) / a) * 180 / Math.PI)); camera.updateProjectionMatrix(); req();
 }
+// ------------------------------------------------------------------ Nachbearbeitung (realistischer: Kontaktschatten, Leuchten, Kamera-Look)
+const DPR = Math.min(devicePixelRatio || 1, 2);
+const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: TOUCH ? 2 : 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.addPass(new RenderPass(scene, camera));
+const AOS = TOUCH ? 0.5 : 0.75;                                    // AO in geringerer Auflösung (Handy schonen)
+const gtao = new GTAOPass(scene, camera, innerWidth * DPR * AOS, innerHeight * DPR * AOS, undefined, { radius: 0.32, distanceExponent: 1.4, thickness: 1.2, scale: 1.0 }, { radius: 6, rings: 2, samples: 12 });
+gtao.blendIntensity = 0.7;
+{ const ss = gtao.setSize.bind(gtao); gtao.setSize = (w, h) => ss(Math.round(w * AOS), Math.round(h * AOS)); }
+gtao.overrideVisibility = function () {                             // Blätter, Glas, Leuchtflächen nicht als Klötze mitrechnen
+  const cache = this._visibilityCache;
+  this.scene.traverse((o) => { cache.set(o, o.visible); if (o.isPoints || o.isLine || o.isSprite) o.visible = false; else if (o.isMesh && !Array.isArray(o.material) && (o.material.transparent || o.material.alphaTest > 0)) o.visible = false; });
+};
+composer.addPass(gtao);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.28, 0.55, 0.9);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const finish = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uSeed: { value: 0 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSeed; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233)) + uSeed) * 43758.5453); }
+    void main(){ vec4 c = texture2D(tDiffuse, vUv); vec2 d = vUv - 0.5; float v = smoothstep(0.9, 0.28, length(d * vec2(1.0, 0.9)));
+      c.rgb *= mix(0.93, 1.0, v); c.rgb += (h(gl_FragCoord.xy) - 0.5) * 0.022; gl_FragColor = c; }`,
+});
+composer.addPass(finish);
+const FX = qs.get('fx'); let slow = 0;
+if (FX === 'off') { gtao.enabled = false; bloom.enabled = false; }
 addEventListener('resize', resize); resize();
 const clock = new THREE.Clock(); const tmp = new THREE.Vector3();
 const ease = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 function frame() {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, clock.getDelta());
+  const rawDt = clock.getDelta(), dt = Math.min(0.05, rawDt);
+  if (FX !== 'hi' && gtao.enabled && rawDt > 0.045 && rawDt < 0.5 && (ptrs.size || walkTo || tween || joy)) { if (++slow > 25) { gtao.enabled = false; bloom.enabled = false; req(); } } else if (rawDt < 0.03) slow = Math.max(0, slow - 1);
   let active = false;
   if (st.mode === 'walk') {
     let f = 0, s = 0, turn = 0;
@@ -887,11 +926,11 @@ function frame() {
       d.el.style.display = on ? 'block' : 'none'; d.el.style.transform = `translate(${(tmp.x + 1) / 2 * innerWidth}px,${(1 - tmp.y) / 2 * innerHeight}px) translate(-50%,-50%)`;
     }
   }
-  if (active || needRender || st.mode === 'top' && ptrs.size) { renderer.render(scene, camera); needRender = active; }
+  if (active || needRender || st.mode === 'top' && ptrs.size) { composer.render(); needRender = active; }
 }
 setLook(LOOK, false);
 if (LOOK === 'matcha') { go('eingang'); tween = null; const v = VIEWS_M.eingang; Object.assign(st, { x: v.x, z: v.z, yaw: v.yaw, pitch: v.pitch }); }
 else { go('fenster'); tween = null; Object.assign(st, { x: W / 2, z: L - 0.75, yaw: 0, pitch: -0.05 }); }
 frame();
-window.__room = { st, go, camera, renderer, scene, req, setLook, setNeon: (v) => { neonOn.v = v; drawNeon(); } };
+window.__room = { st, go, camera, renderer, scene, req, setLook, gtao, bloom, composer, setNeon: (v) => { neonOn.v = v; drawNeon(); } };
 document.body.classList.add('ready');
