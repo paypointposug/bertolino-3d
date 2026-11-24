@@ -176,29 +176,35 @@ const flatMat = (host, p, alb, extra = {}) => { const e = lmSample(QN[host], p);
 await document.fonts.load('200px Sacramento').catch(() => {});
 const neonOn = { v: true };
 const neonMat = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, depthWrite: false });
-const neonGlowMat = new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, depthWrite: false, blending: THREE.AdditiveBlending });
+const neonGlowMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false });   // warmer Lichtschein in Form der Schrift (färbt die weiße Wand warm)
 function drawNeon() {
   const on = neonOn.v;
   const c = cnv(1024, 360, (g, w, h) => {
     g.font = '230px Sacramento, "Segoe Script", cursive'; g.textAlign = 'center'; g.textBaseline = 'middle';
     const tx = w / 2, ty = h / 2 + 12;
     g.lineJoin = 'round'; g.lineCap = 'round';
+    g.save(); g.shadowColor = 'rgba(70,62,55,0.42)'; g.shadowBlur = 9; g.shadowOffsetX = 2000 + 7; g.shadowOffsetY = 9;   // Schatten des Schriftzugs auf der Wand (steht 2–3 cm ab)
+    g.strokeStyle = '#000'; g.lineWidth = 11; g.strokeText('le Fleur', tx - 2000, ty); g.restore();
     g.strokeStyle = 'rgba(235,240,240,0.10)'; g.lineWidth = 46; g.strokeText('le Fleur', tx, ty);   // Acryl-Platte
     g.strokeStyle = 'rgba(140,146,146,0.55)'; g.lineWidth = 2.5; g.strokeText('le Fleur', tx, ty);
-    g.strokeStyle = 'rgba(120,124,124,0.75)'; g.lineWidth = 12; g.strokeText('le Fleur', tx, ty);          // Schlauch-Kante
+    g.strokeStyle = 'rgba(112,116,116,0.85)'; g.lineWidth = 12.5; g.strokeText('le Fleur', tx, ty);          // Schlauch-Kante
     if (on) { g.shadowColor = 'rgba(255,240,215,0.9)'; g.shadowBlur = 10; }
     g.strokeStyle = on ? '#fff6e6' : '#eef0f0'; g.lineWidth = 8; g.strokeText('le Fleur', tx, ty); if (on) g.strokeText('le Fleur', tx, ty);
   });
   neonMat.map?.dispose(); neonMat.map = new THREE.CanvasTexture(c); neonMat.map.colorSpace = THREE.SRGBColorSpace; neonMat.needsUpdate = true;
-  const sNeon = on ? 0.98 : 0.62; neonMat.color.setScalar(sNeon);
-  neonGlowMat.opacity = on ? 0.16 : 0; req();
+  const sNeon = on ? 1.25 : 0.62; neonMat.color.setScalar(sNeon);   // an: heller als Weiß -> leuchtet (Bloom)
+  neonGlowMat.opacity = on ? 1 : 0; req();
 }
 {
   const nx = AR.cx - 0.03, ny = 1.37, z = L + AR.rec - 0.03;            // vom Raum aus leicht rechts der Mitte
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.211), neonMat); sign.position.set(nx, ny, z); sign.rotation.y = Math.PI; sign.name = 'neon'; add(sign, 'C');
-  const gc = cnv(256, 256, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(255,244,225,0.55)'); gr.addColorStop(0.45, 'rgba(255,240,220,0.18)'); gr.addColorStop(1, 'rgba(255,240,220,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
-  neonGlowMat.map = new THREE.CanvasTexture(gc);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5), neonGlowMat); glow.position.set(nx, ny, L + AR.rec - 0.002); glow.rotation.y = Math.PI; add(glow, 'C');
+  const gc = cnv(1536, 768, (g, w, h) => {                            // gleicher Maßstab wie das Schild (1024 px = 0,6 m)
+    g.font = '230px Sacramento, "Segoe Script", cursive'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.lineCap = 'round';
+    const tx = w / 2, ty = h / 2 + 12;
+    for (const [blur, a, lw] of [[70, 0.42, 22], [28, 0.55, 12], [10, 0.62, 9]]) { g.save(); g.shadowColor = `rgba(255,186,110,${a})`; g.shadowBlur = blur; g.shadowOffsetX = 3000; g.strokeStyle = '#000'; g.lineWidth = lw; g.strokeText('le Fleur', tx - 3000, ty); g.restore(); }
+  });
+  neonGlowMat.map = new THREE.CanvasTexture(gc); neonGlowMat.map.colorSpace = THREE.SRGBColorSpace;
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), neonGlowMat); glow.position.set(nx, ny, L + AR.rec - 0.002); glow.rotation.y = Math.PI; add(glow, 'C');
   drawNeon();
   // Kabel zur Steckdose unten links in der Nische, mit Schnurschalter
   const cm = flatMat('wallC', [AR.cx + ar, 0.8, L], [0.86, 0.86, 0.86]);
@@ -735,6 +741,93 @@ function trailing(x, y0, z, out, seed, wall, e) {
   }
 }
 
+// --- Blumenbogen um das Neon „le Fleur“: Eukalyptus-Girlande, Rosen (rosa + weiß) und warme Mini-Lichterkette
+{
+  const yb = 0.10, ys = AR.top - ar, side = ys - yb, arc = Math.PI * ar, TOT = 2 * side + arc;
+  const along = (u) => {                                       // Bogenkante: links unten (+x, vom Raum aus links) -> hoch -> Bogen -> rechts runter
+    let d = u * TOT;
+    if (d < side) return { x: AR.cx + ar, y: yb + d, nx: 1, ny: 0 };
+    d -= side;
+    if (d < arc) { const t = d / ar; return { x: AR.cx + ar * Math.cos(t), y: ys + ar * Math.sin(t), nx: Math.cos(t), ny: Math.sin(t) }; }
+    d -= arc; return { x: AR.cx - ar, y: ys - d, nx: -1, ny: 0 };
+  };
+  const dens = (u) => 0.35 + 0.65 * Math.exp(-(((u - 0.44) / 0.2) ** 2)) + 0.35 * Math.exp(-(((u - 0.86) / 0.07) ** 2));   // oben links voll, rechts ein kleiner Büschel
+  const r = rnd(808), pick = () => { for (;;) { const u = r(); if (r() * 1.35 < dens(u)) return u; } };
+  const gauss = () => (r() + r() + r() - 1.5) / 1.5;
+  const eW = (x, y) => eAt('wallC', [x, y, L]);
+  // Eukalyptus (2 Girlanden à 3 m): runde, silbrig grüne Blätter
+  const coin = new THREE.CanvasTexture(cnv(128, 160, (g, w, h) => {
+    g.fillStyle = '#fff'; g.beginPath(); g.ellipse(w / 2, h / 2 + 6, w / 2 - 6, h / 2 - 12, 0, 0, 6.3); g.fill();
+    g.globalCompositeOperation = 'source-atop'; const gr = g.createRadialGradient(w * 0.42, h * 0.4, 4, w / 2, h / 2, w * 0.62); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, '#b9c4bc'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(w / 2, 4); g.lineTo(w / 2, h - 10); g.stroke();
+  })); coin.colorSpace = THREE.SRGBColorSpace;
+  {
+    const P = [], U = [], Cc = [];
+    for (let i = 0; i < 1250; i++) {
+      const u = pick(), a = along(u), off = 0.016 + gauss() * 0.06, x = a.x + a.nx * off, y = a.y + a.ny * off, z = L - 0.006 - r() * 0.065;
+      const len = 0.032 + r() * 0.022, wid = len * (0.85 + r() * 0.2);
+      const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((r() - 0.5) * 1.3, Math.PI + (r() - 0.5) * 1.2, Math.atan2(a.ny, a.nx) - Math.PI / 2 + (r() - 0.5) * 2.4, 'YXZ'));
+      const v = [[-wid / 2, 0], [wid / 2, 0], [wid / 2, len], [-wid / 2, len]].map(([p, q]) => new THREE.Vector3(p, q, 0).applyMatrix4(m).add(new THREE.Vector3(x, y, z)));
+      const e = eW(x, y), k = (0.62 + r() * 0.42) * (0.78 + 0.22 * ((L - z) / 0.07)), tint = r();
+      const alb = tint < 0.75 ? [0.34, 0.45, 0.38] : tint < 0.92 ? [0.25, 0.38, 0.22] : [0.46, 0.52, 0.44];
+      for (const j of [0, 1, 2, 0, 2, 3]) { P.push(v[j].x, v[j].y, v[j].z); U.push(j === 1 || j === 2 ? 1 : 0, j >= 2 ? 1 : 0); Cc.push(alb[0] * e[0] * k, alb[1] * e[1] * k, alb[2] * e[2] * k); }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3));
+    addF(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: coin, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true })), 'C');
+  }
+  // Rose: 4 Blütenblatt-Ringe, innen geschlossen, außen offen (Blüte zeigt entlang +y)
+  const roseGeo = (() => {
+    const P = [], C = [], idx = [];
+    const rings = [[3, 0.003, 0.02, 0.12, 0.016, 0.72], [5, 0.007, 0.024, 0.42, 0.022, 0.82], [6, 0.011, 0.025, 0.85, 0.026, 0.92], [7, 0.015, 0.022, 1.25, 0.029, 1.0]];
+    const NS = 5, NT = 5;
+    rings.forEach(([n, rb, h, open, w, kr], ri) => {
+      for (let p = 0; p < n; p++) {
+        const a = (p + ri * 0.5) / n * Math.PI * 2 + ri * 0.7, R = [Math.cos(a), 0, Math.sin(a)], T = [-Math.sin(a), 0, Math.cos(a)], b0 = P.length / 3;
+        for (let ti = 0; ti <= NT; ti++) for (let si = 0; si <= NS; si++) {
+          const t = ti / NT, s = si / NS * 2 - 1, th = open * (0.25 + 0.75 * t * t), wd = w * (0.45 + 0.55 * Math.sin(Math.PI * (0.18 + 0.7 * t)));
+          const cr = rb + h * t * Math.sin(th) - 0.004 * s * s * (1 - ri * 0.2), cy = h * t * Math.cos(th);
+          P.push(R[0] * cr + T[0] * s * wd / 2, cy, R[2] * cr + T[2] * s * wd / 2);
+          const k = kr * (0.68 + 0.32 * t) * (1 - 0.08 * Math.abs(s)); C.push(k, k, k);
+        }
+        for (let ti = 0; ti < NT; ti++) for (let si = 0; si < NS; si++) { const q = b0 + ti * (NS + 1) + si; idx.push(q, q + 1, q + NS + 2, q, q + NS + 2, q + NS + 1); }
+      }
+    });
+    const sp = new THREE.SphereGeometry(0.012, 10, 8).scale(1, 0.8, 1).translate(0, 0.006, 0), o = P.length / 3, sa = sp.attributes.position;   // Knospe innen, dunkel
+    for (let i = 0; i < sa.count; i++) { P.push(sa.getX(i), sa.getY(i), sa.getZ(i)); C.push(0.55, 0.55, 0.55); }
+    for (const i of sp.index.array) idx.push(o + i);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setIndex(idx);
+    return g;
+  })();
+  const roseMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  const ROSES = [...Array(24).fill([0.86, 0.52, 0.58]), ...Array(10).fill([0.93, 0.91, 0.87])];   // 24 rosa, 10 weiß
+  const im = new THREE.InstancedMesh(roseGeo, roseMat, ROSES.length);
+  const up = new THREE.Vector3(0, 1, 0), M = new THREE.Matrix4(), Q = new THREE.Quaternion(), col = new THREE.Color();
+  const placed = [];
+  ROSES.forEach((alb, i) => {
+    let a, x, y, tries = 0;
+    do { a = along(pick()); const off = 0.02 + gauss() * 0.035; x = a.x + a.nx * off; y = a.y + a.ny * off; tries++; } while (tries < 40 && placed.some(([px, py]) => Math.hypot(px - x, py - y) < 0.075));
+    placed.push([x, y]);
+    const big = i >= 24, sc = big ? 1.3 + r() * 0.2 : 1.0 + r() * 0.22, z = L - 0.05 - r() * 0.02;
+    const d = new THREE.Vector3(a.nx * 0.35 + (r() - 0.5) * 0.5, a.ny * 0.35 + (r() - 0.5) * 0.5, -1).normalize();
+    Q.setFromUnitVectors(up, d).multiply(new THREE.Quaternion().setFromAxisAngle(up, r() * 6.28));
+    M.compose(new THREE.Vector3(x, y, z), Q, new THREE.Vector3(sc, sc, sc)); im.setMatrixAt(i, M);
+    const e = eW(x, y); im.setColorAt(i, col.setRGB(alb[0] * e[0] * 1.05, alb[1] * e[1] * 1.05, alb[2] * e[2] * 1.05, THREE.LinearSRGBColorSpace));
+  });
+  im.userData.noAO = true; addF(im, 'C');                      // Rosen: nicht in die Raumschatten (gab dunkle Flecken)
+  // Lichterkette STRÅLA (2 × 40 LED, warmweiß) durch die Girlande gewebt
+  const N = 80, LP = [];
+  for (let i = 0; i < N; i++) {
+    const u = (i + 0.5) / N + (r() - 0.5) * 0.006, a = along(u), off = 0.016 + Math.sin(i * 1.9) * 0.045 + (r() - 0.5) * 0.02;
+    LP.push(a.x + a.nx * off, a.y + a.ny * off, L - 0.055 - Math.sin(i * 2.7) * 0.02);
+  }
+  const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(LP, 3));
+  const dot = new THREE.InstancedMesh(new THREE.SphereGeometry(0.0032, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 1.9, 1.05), toneMapped: false }), N);
+  for (let i = 0; i < N; i++) { M.makeTranslation(LP[i * 3], LP[i * 3 + 1], LP[i * 3 + 2]); dot.setMatrixAt(i, M); }
+  dot.userData.noAO = true; addF(dot, 'C');
+  const halo = new THREE.CanvasTexture(cnv(64, 64, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(255,214,150,1)'); gr.addColorStop(0.25, 'rgba(255,200,130,0.45)'); gr.addColorStop(1, 'rgba(255,190,120,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }));
+  addF(new THREE.Points(lg, new THREE.PointsMaterial({ map: halo, size: 0.085, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })), 'C');
+}
+
 // --- Barhocker DALFRED (schwarz, 63–74 cm) an der Stehbar
 {
   const g = [];
@@ -888,7 +981,7 @@ gtao.blendIntensity = 0.7;
 { const ss = gtao.setSize.bind(gtao); gtao.setSize = (w, h) => ss(Math.round(w * AOS), Math.round(h * AOS)); }
 gtao.overrideVisibility = function () {                             // Blätter, Glas, Leuchtflächen nicht als Klötze mitrechnen
   const cache = this._visibilityCache;
-  this.scene.traverse((o) => { cache.set(o, o.visible); if (o.isPoints || o.isLine || o.isSprite) o.visible = false; else if (o.isMesh && !Array.isArray(o.material) && (o.material.transparent || o.material.alphaTest > 0)) o.visible = false; });
+  this.scene.traverse((o) => { cache.set(o, o.visible); if (o.isPoints || o.isLine || o.isSprite || o.userData.noAO) o.visible = false; else if (o.isMesh && !Array.isArray(o.material) && (o.material.transparent || o.material.alphaTest > 0)) o.visible = false; });
 };
 composer.addPass(gtao);
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.28, 0.55, 0.9);
